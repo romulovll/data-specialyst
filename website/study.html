@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GCP PDE — Study Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --accent-primary: #06b6d4;
+      --accent-secondary: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #06b6d4, #3b82f6);
+      --status-complete: #10b981;
+      --status-in-progress: #f59e0b;
+      --status-planned: #6b7280;
+      --status-gap: #ef4444;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-subtle: #1f2937;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .app { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-subtle);
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      z-index: 50;
+      transition: transform 0.3s;
+    }
+
+    .sidebar__header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sidebar__title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .sidebar__subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .sidebar__progress {
+      margin-top: 0.75rem;
+    }
+
+    .sidebar__progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+      font-family: var(--font-mono);
+    }
+
+    .sidebar__progress-bar {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .sidebar__progress-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .sidebar__nav { padding: 0.75rem 0; }
+
+    .sidebar__section-title {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.75rem 1.25rem 0.35rem;
+    }
+
+    .sidebar__link {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 1.25rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      border-left: 2px solid transparent;
+    }
+
+    .sidebar__link:hover {
+      color: var(--text-primary);
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    .sidebar__link.active {
+      color: var(--accent-primary);
+      border-left-color: var(--accent-primary);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .sidebar__link-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--status-planned);
+      flex-shrink: 0;
+    }
+
+    .sidebar__link-dot--done { background: var(--status-complete); }
+    .sidebar__link-dot--active { background: var(--status-in-progress); }
+
+    .sidebar__link-count {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .sidebar__footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .sidebar__footer a {
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    /* Mobile toggle */
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 60;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      border: none;
+      color: var(--bg-primary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Main Content */
+    .main {
+      margin-left: 280px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .main__header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(10, 14, 23, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .main__header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .main__header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .main__header-btn {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .main__header-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+    }
+
+    .content {
+      padding: 2rem;
+      max-width: 900px;
+    }
+
+    /* Study Section */
+    .study-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .study-section.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .study-section__title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .study-section__desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Study Card */
+    .study-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .study-card__header {
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.2s;
+    }
+
+    .study-card__header:hover {
+      background: rgba(6, 182, 212, 0.03);
+    }
+
+    .study-card__header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .study-card__checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-subtle);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .study-card__checkbox:checked {
+      background: var(--status-complete);
+      border-color: var(--status-complete);
+    }
+
+    .study-card__checkbox:checked::after {
+      content: '\2713';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .study-card__name {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .study-card.checked .study-card__name {
+      color: var(--status-complete);
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    .study-card__arrow {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: transform 0.3s;
+    }
+
+    .study-card.open .study-card__arrow {
+      transform: rotate(180deg);
+    }
+
+    .study-card__body {
+      display: none;
+      padding: 0 1.5rem 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .study-card.open .study-card__body {
+      display: block;
+    }
+
+    /* Content Styling */
+    .study-card__body h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .study-card__body h3:first-child {
+      margin-top: 1rem;
+    }
+
+    .study-card__body p {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.7;
+      margin-bottom: 0.5rem;
+    }
+
+    .study-card__body ul {
+      list-style: none;
+      margin-bottom: 0.75rem;
+    }
+
+    .study-card__body ul li {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      padding-left: 1rem;
+      position: relative;
+      margin-bottom: 0.3rem;
+    }
+
+    .study-card__body ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55rem;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+    }
+
+    .study-card__body strong { color: var(--text-primary); }
+
+    /* Tables */
+    .study-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.8rem;
+    }
+
+    .study-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary);
+      color: var(--accent-primary);
+      font-family: var(--font-mono);
+      font-weight: 500;
+      font-size: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .study-table td {
+      padding: 0.5rem 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(31, 41, 55, 0.5);
+    }
+
+    .study-table tr:hover td {
+      background: rgba(6, 182, 212, 0.03);
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 0.75rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+      overflow-x: auto;
+      line-height: 1.5;
+      white-space: pre;
+    }
+
+    /* Exam tip */
+    .exam-tip {
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 3px solid var(--status-in-progress);
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      font-size: 0.8rem;
+    }
+
+    .exam-tip__label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--status-in-progress);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .exam-tip p {
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .main {
+        margin-left: 0;
+      }
+      .content {
+        padding: 1.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__header">
+        <div class="sidebar__title">GCP PDE Study Hub</div>
+        <div class="sidebar__subtitle">Professional Data Engineer</div>
+        <div class="sidebar__progress">
+          <div class="sidebar__progress-text">
+            <span>Progress</span>
+            <span id="progressText">0 / 76</span>
+          </div>
+          <div class="sidebar__progress-bar">
+            <div class="sidebar__progress-fill" id="progressFill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar__nav" id="sidebarNav">
+        <div class="sidebar__section-title">Cheatsheets</div>
+        <a href="#" class="sidebar__link active" data-section="services">
+          <span class="sidebar__link-dot"></span>
+          Services Comparison
+        </a>
+        <a href="#" class="sidebar__link" data-section="dataflow">
+          <span class="sidebar__link-dot"></span>
+          Dataflow Patterns
+        </a>
+        <a href="#" class="sidebar__link" data-section="security">
+          <span class="sidebar__link-dot"></span>
+          Security & Governance
+        </a>
+
+        <div class="sidebar__section-title">Weekly Study</div>
+        <a href="#" class="sidebar__link" data-section="week2">
+          <span class="sidebar__link-dot"></span>
+          Week 2: Storage & DBs
+        </a>
+        <a href="#" class="sidebar__link" data-section="week3">
+          <span class="sidebar__link-dot"></span>
+          Week 3: Processing & ML
+        </a>
+        <a href="#" class="sidebar__link" data-section="week4">
+          <span class="sidebar__link-dot"></span>
+          Week 4: Design & Security
+        </a>
+        <a href="#" class="sidebar__link" data-section="week5">
+          <span class="sidebar__link-dot"></span>
+          Week 5: Review
+        </a>
+        <a href="#" class="sidebar__link" data-section="week6">
+          <span class="sidebar__link-dot"></span>
+          Week 6: Exam Day
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <a href="resources.html">Resources</a>
+        &nbsp;&middot;&nbsp;
+        <a href="assessment.html">Assessment</a>
+        &nbsp;&middot;&nbsp;
+        <a href="index.html">Portfolio</a>
+      </div>
+    </aside>
+
+    <!-- Mobile toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="main__header">
+        <h1 id="sectionTitle">Services Comparison</h1>
+        <div class="main__header-actions">
+          <button class="main__header-btn" id="expandAll">Expand All</button>
+          <button class="main__header-btn" id="collapseAll">Collapse All</button>
+        </div>
+      </header>
+
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ========================================
+    // Study Data
+    // ========================================
+    var studyData = {
+      services: {
+        title: 'Services Comparison',
+        description: 'When to use which GCP data service — the most tested topic on the exam.',
+        cards: [
+          {
+            id: 'storage-decision',
+            name: 'Storage Decision Matrix',
+            content: '<h3>Which service for which use case?</h3>' +
+              '<table class="study-table"><thead><tr><th>Need</th><th>Service</th><th>Why</th></tr></thead><tbody>' +
+              '<tr><td>SQL analytics on large datasets</td><td><strong>BigQuery</strong></td><td>Serverless, columnar, optimized for analytics</td></tr>' +
+              '<tr><td>Low-latency NoSQL, &gt;1TB, high throughput</td><td><strong>Bigtable</strong></td><td>Wide-column, single-digit ms latency</td></tr>' +
+              '<tr><td>Global relational + strong consistency</td><td><strong>Spanner</strong></td><td>TrueTime, horizontal scaling, SQL</td></tr>' +
+              '<tr><td>Standard relational, single-region</td><td><strong>Cloud SQL</strong></td><td>Managed MySQL/PostgreSQL/SQL Server</td></tr>' +
+              '<tr><td>PostgreSQL with better analytics</td><td><strong>AlloyDB</strong></td><td>Columnar engine, PostgreSQL-compatible</td></tr>' +
+              '<tr><td>Document/key-value, &lt;1TB, serverless</td><td><strong>Firestore</strong></td><td>Serverless, real-time sync</td></tr>' +
+              '<tr><td>Object storage (files, data lake)</td><td><strong>Cloud Storage</strong></td><td>Cheap, durable, lifecycle management</td></tr>' +
+              '<tr><td>In-memory caching</td><td><strong>Memorystore</strong></td><td>Managed Redis/Memcached</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>If the question says "low-latency reads/writes" &rarr; <strong>Bigtable</strong>. "Complex analytics/SQL" &rarr; <strong>BigQuery</strong>. "Global + relational" &rarr; <strong>Spanner</strong>.</p></div>'
+          },
+          {
+            id: 'processing-decision',
+            name: 'Processing Service Decision',
+            content: '<h3>Which processing service?</h3>' +
+              '<table class="study-table"><thead><tr><th>Need</th><th>Service</th><th>Why</th></tr></thead><tbody>' +
+              '<tr><td>New streaming/batch pipeline</td><td><strong>Dataflow</strong></td><td>Serverless, Apache Beam, exactly-once</td></tr>' +
+              '<tr><td>Existing Spark/Hadoop jobs</td><td><strong>Dataproc</strong></td><td>Managed clusters, bring existing code</td></tr>' +
+              '<tr><td>Visual ETL (non-developers)</td><td><strong>Data Fusion</strong></td><td>Drag-and-drop, based on CDAP</td></tr>' +
+              '<tr><td>SQL transformations</td><td><strong>BigQuery</strong></td><td>SQL-native, scheduled queries</td></tr>' +
+              '<tr><td>Orchestration</td><td><strong>Composer</strong></td><td>Managed Airflow, DAG-based</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"New pipeline" &rarr; <strong>Dataflow</strong>. "Migrate existing Spark" &rarr; <strong>Dataproc</strong>. "Non-technical users" &rarr; <strong>Data Fusion</strong>.</p></div>'
+          },
+          {
+            id: 'bq-vs-bt',
+            name: 'BigQuery vs Bigtable',
+            content: '<table class="study-table"><thead><tr><th>Aspect</th><th>BigQuery</th><th>Bigtable</th></tr></thead><tbody>' +
+              '<tr><td>Query language</td><td>SQL</td><td>NoSQL (row key lookups)</td></tr>' +
+              '<tr><td>Latency</td><td>Seconds</td><td>Milliseconds</td></tr>' +
+              '<tr><td>Best for</td><td>Analytics, reporting, ML</td><td>Real-time serving, time-series, IoT</td></tr>' +
+              '<tr><td>Pricing</td><td>Per query or slots</td><td>Per node-hour</td></tr>' +
+              '<tr><td>Joins</td><td>Yes</td><td>No</td></tr>' +
+              '<tr><td>Transactions</td><td>Limited (DML)</td><td>Single-row atomic</td></tr>' +
+              '</tbody></table>'
+          },
+          {
+            id: 'spanner-vs-sql',
+            name: 'Spanner vs Cloud SQL',
+            content: '<table class="study-table"><thead><tr><th>Aspect</th><th>Spanner</th><th>Cloud SQL</th></tr></thead><tbody>' +
+              '<tr><td>Scale</td><td>Horizontal (unlimited)</td><td>Vertical (limited)</td></tr>' +
+              '<tr><td>Distribution</td><td>Global</td><td>Single region + read replicas</td></tr>' +
+              '<tr><td>Consistency</td><td>Strong (global)</td><td>Strong (single region)</td></tr>' +
+              '<tr><td>Cost</td><td>High ($$$)</td><td>Low-moderate</td></tr>' +
+              '<tr><td>Use when</td><td>&gt;10TB, global, transactions</td><td>&lt;10TB, single-region</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Global + relational + transactions" &rarr; <strong>Spanner</strong>. Everything else &rarr; <strong>Cloud SQL</strong>.</p></div>'
+          },
+          {
+            id: 'df-vs-dp',
+            name: 'Dataflow vs Dataproc',
+            content: '<table class="study-table"><thead><tr><th>Aspect</th><th>Dataflow</th><th>Dataproc</th></tr></thead><tbody>' +
+              '<tr><td>Model</td><td>Apache Beam</td><td>Spark / Hadoop</td></tr>' +
+              '<tr><td>Management</td><td>Fully serverless</td><td>Managed clusters</td></tr>' +
+              '<tr><td>Best for</td><td>New pipelines, streaming</td><td>Existing Spark/Hadoop code</td></tr>' +
+              '<tr><td>Streaming</td><td>Native, exactly-once</td><td>Spark Streaming</td></tr>' +
+              '<tr><td>Autoscaling</td><td>Automatic</td><td>Configurable</td></tr>' +
+              '</tbody></table>'
+          },
+          {
+            id: 'storage-classes',
+            name: 'Cloud Storage Classes',
+            content: '<table class="study-table"><thead><tr><th>Class</th><th>Min Duration</th><th>Use Case</th><th>Cost</th></tr></thead><tbody>' +
+              '<tr><td>Standard</td><td>None</td><td>Frequent access</td><td>$$$$</td></tr>' +
+              '<tr><td>Nearline</td><td>30 days</td><td>Monthly access</td><td>$$$</td></tr>' +
+              '<tr><td>Coldline</td><td>90 days</td><td>Quarterly access</td><td>$$</td></tr>' +
+              '<tr><td>Archive</td><td>365 days</td><td>Yearly / compliance</td><td>$</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Accessed once a month" &rarr; <strong>Nearline</strong>. "Compliance archive" &rarr; <strong>Archive</strong>. "Active data lake" &rarr; <strong>Standard</strong>.</p></div>'
+          },
+          {
+            id: 'bq-optimization',
+            name: 'BigQuery Optimization',
+            content: '<table class="study-table"><thead><tr><th>Technique</th><th>What it does</th><th>When to use</th></tr></thead><tbody>' +
+              '<tr><td>Partitioning</td><td>Divides table by date/int/ingestion</td><td>Always on large tables</td></tr>' +
+              '<tr><td>Clustering</td><td>Sorts data within partitions</td><td>Frequent filters on specific columns</td></tr>' +
+              '<tr><td>Materialized views</td><td>Pre-computes aggregations</td><td>Repeated dashboard queries</td></tr>' +
+              '<tr><td>BI Engine</td><td>In-memory acceleration</td><td>Looker/Data Studio dashboards</td></tr>' +
+              '<tr><td>Flat-rate pricing</td><td>Fixed slots</td><td>Predictable, high query volume</td></tr>' +
+              '<tr><td>Long-term storage</td><td>Auto discount after 90 days</td><td>Automatic for all tables</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Reduce BigQuery costs" &rarr; <strong>partitioning + clustering + flat-rate</strong> if predictable volume.</p></div>'
+          },
+          {
+            id: 'ml-services',
+            name: 'ML / AI Services',
+            content: '<table class="study-table"><thead><tr><th>Need</th><th>Service</th><th>Why</th></tr></thead><tbody>' +
+              '<tr><td>ML with SQL (data in BQ)</td><td><strong>BigQuery ML</strong></td><td>CREATE MODEL with SQL</td></tr>' +
+              '<tr><td>AutoML (no code)</td><td><strong>Vertex AI AutoML</strong></td><td>Vision, text, tabular</td></tr>' +
+              '<tr><td>Custom models (TF/PyTorch)</td><td><strong>Vertex AI Custom</strong></td><td>Managed training infra</td></tr>' +
+              '<tr><td>Feature management</td><td><strong>Feature Store</strong></td><td>Avoid training-serving skew</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Team knows SQL but not Python, needs ML" &rarr; <strong>BigQuery ML</strong>. "No ML expertise" &rarr; <strong>AutoML</strong>.</p></div>'
+          },
+          {
+            id: 'ingestion-services',
+            name: 'Ingestion Services',
+            content: '<table class="study-table"><thead><tr><th>Need</th><th>Service</th><th>Why</th></tr></thead><tbody>' +
+              '<tr><td>Real-time event streaming</td><td><strong>Pub/Sub</strong></td><td>Serverless, global</td></tr>' +
+              '<tr><td>Scheduled SaaS transfers</td><td><strong>BQ Data Transfer</strong></td><td>Google Ads, YouTube, S3</td></tr>' +
+              '<tr><td>Large file transfers</td><td><strong>Storage Transfer Service</strong></td><td>Cross-cloud, scheduled</td></tr>' +
+              '<tr><td>Massive offline (PB)</td><td><strong>Transfer Appliance</strong></td><td>Physical device</td></tr>' +
+              '<tr><td>Database replication</td><td><strong>DMS</strong></td><td>MySQL/PostgreSQL CDC</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Petabytes, slow internet" &rarr; <strong>Transfer Appliance</strong>. "From AWS S3" &rarr; <strong>Storage Transfer Service</strong>.</p></div>'
+          }
+        ]
+      },
+      dataflow: {
+        title: 'Dataflow & Apache Beam Patterns',
+        description: 'Core Beam concepts, windowing, and common exam scenarios.',
+        cards: [
+          {
+            id: 'beam-transforms',
+            name: 'Key Beam Transforms',
+            content: '<table class="study-table"><thead><tr><th>Transform</th><th>What it does</th><th>Exam context</th></tr></thead><tbody>' +
+              '<tr><td><strong>ParDo</strong></td><td>Element-wise processing</td><td>Most common, custom logic</td></tr>' +
+              '<tr><td><strong>GroupByKey</strong></td><td>Groups by key</td><td>Aggregation, causes shuffle</td></tr>' +
+              '<tr><td><strong>CoGroupByKey</strong></td><td>Joins two PCollections</td><td>"Join two data sources"</td></tr>' +
+              '<tr><td><strong>Combine</strong></td><td>Aggregation (sum, avg)</td><td>More efficient than GBK for agg</td></tr>' +
+              '<tr><td><strong>Flatten</strong></td><td>Merges PCollections</td><td>"Union of datasets"</td></tr>' +
+              '<tr><td><strong>Partition</strong></td><td>Splits PCollection</td><td>"Route to different sinks"</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Side Inputs & Side Outputs</h3>' +
+              '<ul><li><strong>Side input:</strong> Small dataset used for lookups in ParDo &mdash; "enrich stream with static data"</li>' +
+              '<li><strong>Side output:</strong> Multiple outputs from one transform &mdash; "route errors to dead-letter queue"</li></ul>'
+          },
+          {
+            id: 'windowing',
+            name: 'Windowing (Critical for Exam)',
+            content: '<table class="study-table"><thead><tr><th>Window</th><th>How it works</th><th>Use case</th></tr></thead><tbody>' +
+              '<tr><td><strong>Fixed</strong></td><td>Non-overlapping, fixed duration</td><td>Regular aggregation (every 5 min)</td></tr>' +
+              '<tr><td><strong>Sliding</strong></td><td>Overlapping, duration + period</td><td>Moving averages, trends</td></tr>' +
+              '<tr><td><strong>Session</strong></td><td>Gap-based, groups by activity</td><td>User sessions, clickstreams</td></tr>' +
+              '<tr><td><strong>Global</strong></td><td>Single window for all data</td><td>Batch processing (default)</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Watermarks & Late Data</h3>' +
+              '<ul><li><strong>Watermark:</strong> Estimate of how far behind real-time the pipeline is</li>' +
+              '<li><strong>Allowed lateness:</strong> How long to keep window state for late elements</li>' +
+              '<li><strong>DISCARDING:</strong> Each pane has only new data</li>' +
+              '<li><strong>ACCUMULATING:</strong> Each pane has all data so far</li></ul>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Handle late-arriving data" &rarr; <strong>allowed lateness + accumulation mode</strong>.</p></div>'
+          },
+          {
+            id: 'templates',
+            name: 'Templates & Execution',
+            content: '<h3>Template Types</h3>' +
+              '<table class="study-table"><thead><tr><th>Type</th><th>Characteristics</th><th>When to use</th></tr></thead><tbody>' +
+              '<tr><td>Classic Templates</td><td>Pre-compiled, limited params</td><td>Simple, reusable jobs</td></tr>' +
+              '<tr><td>Flex Templates</td><td>Docker container, full flexibility</td><td>Complex jobs, custom deps</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Execution Features</h3>' +
+              '<table class="study-table"><thead><tr><th>Feature</th><th>What it does</th></tr></thead><tbody>' +
+              '<tr><td>Shuffle Service</td><td>Offloads shuffle to managed service</td></tr>' +
+              '<tr><td>Streaming Engine</td><td>Separates compute from state</td></tr>' +
+              '<tr><td>FlexRS</td><td>Flexible scheduling for cheaper batch</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Pipeline Updates</h3>' +
+              '<ul><li><strong>In-place update:</strong> Compatible changes, no data loss</li>' +
+              '<li><strong>Drain:</strong> Graceful shutdown, flush existing data</li>' +
+              '<li><strong>Cancel:</strong> Emergency only, may lose data</li></ul>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Ops team runs pipelines with params" &rarr; <strong>Flex Templates</strong>. "Update without data loss" &rarr; <strong>in-place update</strong>. "Reduce batch costs" &rarr; <strong>FlexRS</strong>.</p></div>'
+          },
+          {
+            id: 'exam-scenarios',
+            name: 'Common Exam Scenarios',
+            content: '<table class="study-table"><thead><tr><th>Scenario</th><th>Answer</th></tr></thead><tbody>' +
+              '<tr><td>Join streaming data with lookup table</td><td><strong>Side input</strong></td></tr>' +
+              '<tr><td>Route bad records to separate output</td><td><strong>Side output</strong> (dead-letter)</td></tr>' +
+              '<tr><td>Aggregate clicks in 10-min windows</td><td><strong>Fixed windows</strong> + Combine</td></tr>' +
+              '<tr><td>Moving average over 1hr, update every 5min</td><td><strong>Sliding window</strong> (60min/5min)</td></tr>' +
+              '<tr><td>Group user activity by session, 30-min timeout</td><td><strong>Session windows</strong></td></tr>' +
+              '<tr><td>Allow 2 hours for late arrivals</td><td><strong>withAllowedLateness(2h)</strong></td></tr>' +
+              '<tr><td>Deploy pipeline for non-tech team</td><td><strong>Flex Template</strong></td></tr>' +
+              '<tr><td>Reduce cost of daily non-urgent batch</td><td><strong>FlexRS</strong></td></tr>' +
+              '<tr><td>Stream from Pub/Sub to BigQuery</td><td>PubsubIO &rarr; transforms &rarr; BigQueryIO</td></tr>' +
+              '<tr><td>Move existing Spark streaming to GCP</td><td><strong>Dataproc</strong> (NOT Dataflow)</td></tr>' +
+              '</tbody></table>'
+          },
+          {
+            id: 'streaming-semantics',
+            name: 'Streaming Semantics',
+            content: '<table class="study-table"><thead><tr><th>Mode</th><th>Guarantee</th><th>Latency</th><th>Use case</th></tr></thead><tbody>' +
+              '<tr><td><strong>Exactly-once</strong> (default)</td><td>No duplicates, no loss</td><td>Higher</td><td>Financial, critical</td></tr>' +
+              '<tr><td><strong>At-least-once</strong></td><td>Possible duplicates</td><td>Lower</td><td>Logs, metrics</td></tr>' +
+              '</tbody></table>'
+          }
+        ]
+      },
+      security: {
+        title: 'Security & Governance',
+        description: 'IAM, encryption, DLP, VPC Service Controls, compliance patterns.',
+        cards: [
+          {
+            id: 'iam',
+            name: 'IAM — Identity and Access Management',
+            content: '<h3>Role Types</h3>' +
+              '<table class="study-table"><thead><tr><th>Type</th><th>Example</th><th>When to use</th></tr></thead><tbody>' +
+              '<tr><td>Basic</td><td>Owner, Editor, Viewer</td><td>Almost never (too broad)</td></tr>' +
+              '<tr><td>Predefined</td><td>bigquery.dataViewer</td><td>Most cases</td></tr>' +
+              '<tr><td>Custom</td><td>Your own permissions</td><td>When predefined is too broad</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Key Data Roles</h3>' +
+              '<table class="study-table"><thead><tr><th>Role</th><th>What it can do</th></tr></thead><tbody>' +
+              '<tr><td>bigquery.dataViewer</td><td>Read tables and views</td></tr>' +
+              '<tr><td>bigquery.dataEditor</td><td>Read + write tables</td></tr>' +
+              '<tr><td>bigquery.jobUser</td><td>Run queries</td></tr>' +
+              '<tr><td>dataflow.developer</td><td>Create/manage Dataflow jobs</td></tr>' +
+              '<tr><td>dataflow.worker</td><td>Used by worker VMs</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Service Account Best Practices</h3>' +
+              '<ul><li>Use dedicated SA per service/pipeline</li>' +
+              '<li>Grant minimum required roles</li>' +
+              '<li>Use Workload Identity Federation (avoid key files)</li></ul>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Authenticate pipeline to BigQuery" &rarr; service account with <strong>bigquery.dataEditor + bigquery.jobUser</strong>.</p></div>'
+          },
+          {
+            id: 'encryption',
+            name: 'Encryption (GMEK, CMEK, CSEK)',
+            content: '<table class="study-table"><thead><tr><th>Level</th><th>Who manages</th><th>Key storage</th><th>Use case</th></tr></thead><tbody>' +
+              '<tr><td><strong>Default (GMEK)</strong></td><td>Google</td><td>Google-managed</td><td>Most cases (always on)</td></tr>' +
+              '<tr><td><strong>CMEK</strong></td><td>Customer</td><td>Cloud KMS</td><td>Compliance, key control</td></tr>' +
+              '<tr><td><strong>CSEK</strong></td><td>Customer</td><td>Customer infra</td><td>Max control, Google never has key</td></tr>' +
+              '</tbody></table>' +
+              '<ul><li>CMEK supports <strong>automatic key rotation</strong></li>' +
+              '<li>CSEK does NOT support automatic rotation</li>' +
+              '<li>Envelope encryption: data encrypted with DEK, DEK encrypted with KEK</li></ul>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Company must manage own keys" &rarr; <strong>CMEK</strong>. "Google must never access keys" &rarr; <strong>CSEK</strong>.</p></div>'
+          },
+          {
+            id: 'vpc-sc',
+            name: 'VPC Service Controls',
+            content: '<p>Creates a <strong>security perimeter</strong> around GCP services to prevent data exfiltration.</p>' +
+              '<div class="code-block">[Service Perimeter]\n  |- Project A (BigQuery)\n  |- Project B (GCS)\n  |- Project C (Dataflow)\n\n  Data flows between A, B, C\n  Data CANNOT leave the perimeter</div>' +
+              '<h3>Key Concepts</h3>' +
+              '<table class="study-table"><thead><tr><th>Concept</th><th>Description</th></tr></thead><tbody>' +
+              '<tr><td>Service perimeter</td><td>Boundary around projects/services</td></tr>' +
+              '<tr><td>Access levels</td><td>Who can cross (IP, identity)</td></tr>' +
+              '<tr><td>Ingress/Egress rules</td><td>What can come in/go out</td></tr>' +
+              '<tr><td>Bridge</td><td>Connect two perimeters</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Prevent data exfiltration" &rarr; <strong>VPC Service Controls</strong>. Always.</p></div>'
+          },
+          {
+            id: 'dlp',
+            name: 'Data Loss Prevention (DLP)',
+            content: '<h3>De-identification Techniques</h3>' +
+              '<table class="study-table"><thead><tr><th>Technique</th><th>Reversible?</th><th>Description</th></tr></thead><tbody>' +
+              '<tr><td>Masking</td><td>No</td><td>Replace characters (****1234)</td></tr>' +
+              '<tr><td>Redaction</td><td>No</td><td>Remove entirely</td></tr>' +
+              '<tr><td>Tokenization</td><td>Yes</td><td>Replace with surrogate token</td></tr>' +
+              '<tr><td>Format-preserving encryption</td><td>Yes</td><td>Encrypt but keep format</td></tr>' +
+              '<tr><td>Deterministic encryption</td><td>Yes</td><td>Same input &rarr; same output</td></tr>' +
+              '<tr><td>Date shifting</td><td>No*</td><td>Shift dates by random amount</td></tr>' +
+              '</tbody></table>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Anonymize PII for analytics" &rarr; <strong>DLP de-identification</strong>. "Find credit cards in GCS" &rarr; <strong>DLP inspection</strong>.</p></div>'
+          },
+          {
+            id: 'audit-logs',
+            name: 'Audit Logs & Governance',
+            content: '<table class="study-table"><thead><tr><th>Log Type</th><th>Records</th><th>Always on?</th></tr></thead><tbody>' +
+              '<tr><td>Admin Activity</td><td>Config changes</td><td>Yes (free)</td></tr>' +
+              '<tr><td>Data Access</td><td>Read/write to data</td><td>No (must enable, costs $)</td></tr>' +
+              '<tr><td>System Event</td><td>Google-initiated</td><td>Yes (free)</td></tr>' +
+              '<tr><td>Policy Denied</td><td>Access denied</td><td>Yes (free)</td></tr>' +
+              '</tbody></table>' +
+              '<h3>Column-Level Security (BigQuery)</h3>' +
+              '<ul><li>Create policy tag taxonomy in Data Catalog</li>' +
+              '<li>Assign policy tags to BigQuery columns</li>' +
+              '<li>Grant Fine-Grained Reader role to authorized users</li></ul>' +
+              '<div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Who accessed this table?" &rarr; <strong>Enable Data Access audit logs</strong>. "Restrict salary column" &rarr; <strong>Policy tags</strong>.</p></div>'
+          },
+          {
+            id: 'compliance',
+            name: 'Compliance Quick Reference',
+            content: '<table class="study-table"><thead><tr><th>Requirement</th><th>GCP Solution</th></tr></thead><tbody>' +
+              '<tr><td>Encrypt all data at rest</td><td>Default (automatic)</td></tr>' +
+              '<tr><td>Customer-managed keys</td><td>CMEK (Cloud KMS)</td></tr>' +
+              '<tr><td>Prevent data exfiltration</td><td>VPC Service Controls</td></tr>' +
+              '<tr><td>Find and mask PII</td><td>DLP</td></tr>' +
+              '<tr><td>Column-level access</td><td>Policy tags (Data Catalog)</td></tr>' +
+              '<tr><td>Audit data access</td><td>Cloud Audit Logs</td></tr>' +
+              '<tr><td>Data residency</td><td>Regional datasets/buckets</td></tr>' +
+              '<tr><td>Right to erasure (GDPR)</td><td>DML DELETE in BigQuery</td></tr>' +
+              '<tr><td>Track data origin</td><td>Data lineage (Dataplex)</td></tr>' +
+              '</tbody></table>'
+          }
+        ]
+      },
+      week2: {
+        title: 'Week 2: Storage & Databases',
+        description: 'Master the GCP storage services you don\'t use daily. ~7 hours.',
+        cards: [
+          { id: 'w2-bigtable', name: 'Day 1-2: Bigtable (2-3 hours)', content: '<h3>What to study</h3><ul><li>Architecture: tablets, nodes, Colossus, LSM tree</li><li>Row key design: hot-spotting, reverse timestamp, hash prefix</li><li>Column families: grouping related data</li><li>Performance: SSD vs HDD, when to add nodes</li><li>Use cases: time-series, IoT, high read/write throughput</li></ul><h3>Key exam concepts</h3><ul><li>NOT good for: transactions, SQL, small datasets (&lt;1TB)</li><li>IS good for: &gt;1TB, low-latency, time-series, IoT</li><li>Row key design is the #1 performance factor</li><li>Can read in Dataflow using BigtableIO</li></ul>' },
+          { id: 'w2-spanner', name: 'Day 2-3: Cloud Spanner (2 hours)', content: '<h3>What to study</h3><ul><li>Architecture: TrueTime, global strong consistency</li><li>When to choose: global distribution + relational + transactions</li><li>Schema: interleaved tables, avoid sequential primary keys</li><li>Cost: node-hours (expensive)</li></ul><h3>Key exam concepts</h3><ul><li>Spanner = relational + global + strongly consistent + horizontal</li><li>Use when: need global transactions, &gt;10TB relational, horizontal scaling</li><li>Supports SQL (ANSI 2011)</li></ul>' },
+          { id: 'w2-dataproc', name: 'Day 3-4: Dataproc (1-2 hours)', content: '<h3>What to study</h3><ul><li>Managed Spark/Hadoop on GCP</li><li>Dataproc vs Dataflow decision criteria</li><li>Cluster types, autoscaling, preemptible/spot workers</li><li>Dataproc Serverless: no cluster management</li><li>Ephemeral clusters: spin up, process, tear down</li></ul><h3>Key exam concepts</h3><ul><li>"Migrate existing Spark jobs" &rarr; Dataproc</li><li>Store data in GCS, NOT HDFS</li><li>Use ephemeral clusters to save cost</li></ul>' },
+          { id: 'w2-catalog', name: 'Day 5: Data Catalog / Dataplex (1 hour)', content: '<h3>What to study</h3><ul><li>Data Catalog: metadata management, search, tag templates</li><li>Dataplex: data lake management, quality rules, lineage</li><li>Policy tags for column-level security in BigQuery</li></ul><h3>Key exam concepts</h3><ul><li>"Metadata discovery" &rarr; Data Catalog</li><li>"Data quality rules" &rarr; Dataplex</li><li>Policy tags = column-level access control</li></ul>' },
+          { id: 'w2-cloudsql', name: 'Day 5: Cloud SQL vs AlloyDB (30 min)', content: '<h3>What to study</h3><ul><li>Cloud SQL: managed MySQL/PostgreSQL/SQL Server</li><li>AlloyDB: PostgreSQL-compatible, Columnar Engine</li><li>Migration: Database Migration Service (DMS)</li></ul><h3>Key exam concepts</h3><ul><li>"Migrate on-prem PostgreSQL" &rarr; Cloud SQL or AlloyDB via DMS</li><li>AlloyDB = "PostgreSQL but faster" for mixed OLTP+OLAP</li></ul>' }
+        ]
+      },
+      week3: {
+        title: 'Week 3: Processing & ML',
+        description: 'Cover ML on GCP and lesser-used processing services. ~7 hours.',
+        cards: [
+          { id: 'w3-bqml', name: 'Day 1-2: BigQuery ML (2 hours)', content: '<h3>Supported model types</h3><ul><li>Linear/logistic regression</li><li>K-means clustering</li><li>Matrix factorization (recommendations)</li><li>Time-series (ARIMA_PLUS)</li><li>Boosted trees (XGBoost)</li><li>Imported TensorFlow models</li></ul><h3>Key SQL syntax</h3><div class="code-block">CREATE OR REPLACE MODEL `project.dataset.model`\nOPTIONS(model_type=\'logistic_reg\',\n       input_label_cols=[\'label\']) AS\nSELECT * FROM `training_data`;\n\nSELECT * FROM ML.PREDICT(\n  MODEL `project.dataset.model`,\n  (SELECT * FROM `new_data`));</div><div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"SQL team needs ML" &rarr; <strong>BigQuery ML</strong>. Recommendations &rarr; matrix factorization. Forecasting &rarr; ARIMA_PLUS.</p></div>' },
+          { id: 'w3-vertex', name: 'Day 2-3: Vertex AI Basics (2 hours)', content: '<h3>What to study</h3><ul><li>AutoML: train models without code (vision, text, tabular)</li><li>Custom training: TensorFlow, PyTorch, scikit-learn</li><li>Feature Store: centralized features, avoid training-serving skew</li><li>Model Registry: version and manage models</li><li>Endpoints: online prediction</li><li>Model monitoring: detect data drift</li></ul><div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"No ML expertise" &rarr; <strong>AutoML</strong>. "Feature consistency" &rarr; <strong>Feature Store</strong>. "Monitor production model" &rarr; <strong>Model monitoring</strong>.</p></div>' },
+          { id: 'w3-fusion', name: 'Day 3-4: Data Fusion (1 hour)', content: '<h3>Key points</h3><ul><li>Visual ETL tool based on CDAP (open source)</li><li>Drag-and-drop pipeline builder</li><li>For non-developers building ETL</li><li>NOT for complex streaming (use Dataflow)</li><li>Runs on Dataproc under the hood</li><li>Editions: Basic, Developer, Enterprise</li></ul>' },
+          { id: 'w3-dlp', name: 'Day 4: Data Loss Prevention (1.5 hours)', content: '<h3>Core operations</h3><ul><li><strong>Inspection:</strong> Find sensitive data (PII)</li><li><strong>De-identification:</strong> Remove/mask PII</li><li><strong>Re-identification:</strong> Reverse with key</li></ul><h3>Techniques</h3><ul><li>Masking (not reversible): ****1234</li><li>Tokenization (reversible): replace with surrogate</li><li>Format-preserving encryption (reversible): keeps format</li><li>Deterministic encryption (reversible): same input &rarr; same output</li></ul><div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"GDPR, anonymize data" &rarr; <strong>DLP de-identification</strong>. Tokenization is reversible, masking is NOT.</p></div>' },
+          { id: 'w3-df-adv', name: 'Day 5: Advanced Dataflow (1.5 hours)', content: '<h3>Beyond basics</h3><ul><li><strong>Classic Templates:</strong> pre-compiled, limited params</li><li><strong>Flex Templates:</strong> Docker, custom params, more flexible</li><li><strong>Exactly-once:</strong> default, higher latency</li><li><strong>At-least-once:</strong> optional, lower latency</li><li><strong>Shuffle Service:</strong> offload shuffle to managed service</li><li><strong>Streaming Engine:</strong> separate compute from state</li><li><strong>FlexRS:</strong> cheaper batch scheduling</li><li><strong>In-place update:</strong> compatible changes, no data loss</li><li><strong>Drain:</strong> graceful stop, flush data</li></ul>' }
+        ]
+      },
+      week4: {
+        title: 'Week 4: Design & Security',
+        description: 'System design questions and security best practices. ~7 hours.',
+        cards: [
+          { id: 'w4-migration', name: 'Day 1: Migration Strategies (1.5 hours)', content: '<h3>Transfer tools</h3><ul><li><strong>gsutil:</strong> CLI, small-medium transfers</li><li><strong>Storage Transfer Service:</strong> scheduled, cross-cloud (S3 &rarr; GCS)</li><li><strong>Transfer Appliance:</strong> physical device for petabytes</li><li><strong>DMS:</strong> MySQL/PostgreSQL to Cloud SQL/AlloyDB</li><li><strong>BQ Data Transfer:</strong> SaaS &rarr; BigQuery</li></ul><div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Petabytes, slow internet" &rarr; <strong>Transfer Appliance</strong>. "Migrate Hadoop" &rarr; <strong>Dataproc</strong> (keep Spark) or <strong>Dataflow</strong> (re-architect).</p></div>' },
+          { id: 'w4-cost', name: 'Day 2: Cost Optimization (1.5 hours)', content: '<h3>BigQuery</h3><ul><li>On-demand vs flat-rate (editions)</li><li>Partitioning reduces data scanned</li><li>Clustering improves filter performance</li><li>Long-term storage: auto 50% discount after 90 days</li></ul><h3>Dataflow</h3><ul><li>FlexRS for non-urgent batch (cheaper)</li><li>Streaming Engine reduces streaming cost</li></ul><h3>Dataproc</h3><ul><li>Preemptible/spot workers</li><li>Ephemeral clusters (spin up, process, tear down)</li></ul><h3>GCS</h3><ul><li>Lifecycle policies auto-downgrade storage class</li></ul>' },
+          { id: 'w4-security', name: 'Day 3: Security & IAM (1.5 hours)', content: '<h3>Key topics</h3><ul><li>Least privilege principle</li><li>Service accounts per service (not user accounts)</li><li>CMEK: you control keys in Cloud KMS</li><li>CSEK: you provide key, Google never stores it</li><li>VPC Service Controls: prevent data exfiltration</li><li>Policy tags: column-level security in BigQuery</li></ul>' },
+          { id: 'w4-dr', name: 'Day 4: Reliability & DR (1 hour)', content: '<h3>By service</h3><ul><li><strong>BigQuery:</strong> multi-region datasets, auto replication</li><li><strong>Bigtable:</strong> cross-zone/region replication</li><li><strong>Spanner:</strong> multi-region, auto failover</li><li><strong>Cloud SQL:</strong> HA config, cross-region read replicas</li><li><strong>Dataflow:</strong> built-in checkpointing for streaming</li></ul><div class="exam-tip"><div class="exam-tip__label">Exam Shortcut</div><p>"Zero RPO relational" &rarr; <strong>Spanner multi-region</strong>. "DR for BigQuery" &rarr; <strong>multi-region dataset</strong>.</p></div>' },
+          { id: 'w4-governance', name: 'Day 5: Data Governance (1.5 hours)', content: '<h3>Key topics</h3><ul><li>Data Catalog: search, discover, tag metadata</li><li>Dataplex: data lakes, quality rules, lineage</li><li>GDPR: right to erasure &rarr; DML DELETE in BigQuery</li><li>Data residency: control regions for storage</li><li>Audit logging: Cloud Audit Logs for access tracking</li><li>Data retention: lifecycle policies, BQ table expiration</li></ul>' }
+        ]
+      },
+      week5: {
+        title: 'Week 5: Review + Practice Exam',
+        description: 'Validate progress with a second practice exam. ~7 hours.',
+        cards: [
+          { id: 'w5-review', name: 'Day 1-2: Review All Material (2 hours)', content: '<h3>Checklist</h3><ul><li>Review Services Comparison cheatsheet</li><li>Review Dataflow Patterns cheatsheet</li><li>Review Security & Governance cheatsheet</li><li>Re-read your notes from weeks 2-4</li><li>Focus on topics still unclear</li></ul>' },
+          { id: 'w5-exam', name: 'Day 3: Second Practice Exam (2 hours)', content: '<h3>Instructions</h3><ul><li>Use a DIFFERENT source than week 1</li><li>Time yourself (2 hours max)</li><li>Record your score</li><li>Log every wrong answer with the domain</li><li>Compare: week 1 vs week 5 score</li></ul><h3>Target: 80%+ to be exam-ready</h3>' },
+          { id: 'w5-gaps', name: 'Day 4-5: Close Remaining Gaps (3 hours)', content: '<h3>Study only topics below 80% accuracy</h3><ul><li>Spend 20-30 min per weak topic</li><li>Re-read relevant docs and cheatsheet sections</li><li>Focus on "exam shortcut" patterns</li></ul>' }
+        ]
+      },
+      week6: {
+        title: 'Week 6: Exam Day',
+        description: 'Final review and exam strategy. You\'ve got this.',
+        cards: [
+          { id: 'w6-review', name: 'Day 1-3: Light Review (1 hour/day)', content: '<h3>No new material. Only review.</h3><ul><li>Day 1: Services Comparison cheatsheet</li><li>Day 2: Dataflow + Security cheatsheets</li><li>Day 3: Quick practice quiz (20-30 questions)</li></ul>' },
+          { id: 'w6-strategy', name: 'Exam Day Strategy', content: '<h3>During the exam</h3><ul><li><strong>First pass (90 min):</strong> Answer confident questions, flag uncertain</li><li><strong>Second pass (30 min):</strong> Return to flagged questions</li><li><strong>Never leave blanks:</strong> No penalty for guessing</li></ul><h3>Question-reading protocol</h3><ul><li>Read the LAST sentence first (the actual question)</li><li>Identify the qualifier: "most cost-effective" / "minimum latency" / "least overhead"</li><li>Eliminate wrong answers first</li><li>Pick the BEST answer, not just a correct one</li></ul><h3>Common traps</h3><ul><li>"Minimum operational overhead" &rarr; serverless option usually correct</li><li>"Existing Spark/Hadoop" &rarr; Dataproc, NOT Dataflow</li><li>"Global + relational" &rarr; Spanner</li><li>Two correct answers? Re-read the qualifier word.</li></ul>' },
+          { id: 'w6-after', name: 'After the Exam', content: '<h3>Next steps</h3><ul><li>Results are usually immediate (pass/fail)</li><li>Official certificate arrives in ~2 weeks</li><li>Update your CV and LinkedIn immediately</li><li>Next cert: GCP Professional Cloud Architect</li></ul><h3>You\'ve got this.</h3><p>With 7+ years of GCP experience, this exam validates what you already do daily. Trust your preparation.</p>' }
+        ]
+      }
+    };
+
+    // ========================================
+    // State (persisted in localStorage)
+    // ========================================
+    var STORAGE_KEY = 'gcp-pde-study-progress';
+    var checkedItems = {};
+    var API_URL = 'http://localhost:8000/api';
+
+    function loadProgress() {
+      return fetch(API_URL + '/progress/' + STORAGE_KEY).then(function(r) { return r.json(); }).then(function(d) {
+        checkedItems = d.progress || {};
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
+      }).catch(function() {
+        try { var s = localStorage.getItem(STORAGE_KEY); if (s) checkedItems = JSON.parse(s); } catch(e) {}
+      });
+    }
+
+    function saveProgress() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
+      fetch(API_URL + '/progress/' + STORAGE_KEY, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ progress: checkedItems }) }).catch(function() {});
+    }
+
+    function getCheckedCount() {
+      var count = 0;
+      for (var k in checkedItems) {
+        if (checkedItems[k]) count++;
+      }
+      return count;
+    }
+
+    function getTotalCount() {
+      var total = 0;
+      for (var section in studyData) {
+        total += studyData[section].cards.length;
+      }
+      return total;
+    }
+
+    // ========================================
+    // Render
+    // ========================================
+    var contentEl = document.getElementById('content');
+    var titleEl = document.getElementById('sectionTitle');
+    var progressText = document.getElementById('progressText');
+    var progressFill = document.getElementById('progressFill');
+    var currentSection = 'services';
+
+    function updateProgress() {
+      var checked = getCheckedCount();
+      var total = getTotalCount();
+      var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+      progressText.textContent = checked + ' / ' + total;
+      progressFill.style.width = pct + '%';
+
+      // Update sidebar dots
+      document.querySelectorAll('.sidebar__link').forEach(function (link) {
+        var section = link.dataset.section;
+        if (!section || !studyData[section]) return;
+        var dot = link.querySelector('.sidebar__link-dot');
+        var sectionCards = studyData[section].cards;
+        var sectionChecked = sectionCards.filter(function (c) { return checkedItems[c.id]; }).length;
+        var countEl = link.querySelector('.sidebar__link-count');
+        if (countEl) countEl.textContent = sectionChecked + '/' + sectionCards.length;
+
+        dot.className = 'sidebar__link-dot';
+        if (sectionChecked === sectionCards.length) {
+          dot.classList.add('sidebar__link-dot--done');
+        } else if (sectionChecked > 0) {
+          dot.classList.add('sidebar__link-dot--active');
+        }
+      });
+    }
+
+    function renderSection(sectionKey) {
+      var section = studyData[sectionKey];
+      if (!section) return;
+
+      currentSection = sectionKey;
+      titleEl.textContent = section.title;
+
+      var html = '<div class="study-section active">';
+      html += '<h2 class="study-section__title">' + section.title + '</h2>';
+      html += '<p class="study-section__desc">' + section.description + '</p>';
+
+      section.cards.forEach(function (card) {
+        var isChecked = checkedItems[card.id] || false;
+        var checkedClass = isChecked ? ' checked' : '';
+
+        html += '<div class="study-card' + checkedClass + '" data-id="' + card.id + '">';
+        html += '<div class="study-card__header">';
+        html += '<div class="study-card__header-left">';
+        html += '<input type="checkbox" class="study-card__checkbox" ' + (isChecked ? 'checked' : '') + ' data-id="' + card.id + '">';
+        html += '<span class="study-card__name">' + card.name + '</span>';
+        html += '</div>';
+        html += '<span class="study-card__arrow">&#9660;</span>';
+        html += '</div>';
+        html += '<div class="study-card__body">' + card.content + '</div>';
+        html += '</div>';
+      });
+
+      html += '</div>';
+      contentEl.innerHTML = html;
+
+      // Bind events
+      document.querySelectorAll('.study-card__header').forEach(function (header) {
+        header.addEventListener('click', function (e) {
+          if (e.target.classList.contains('study-card__checkbox')) return;
+          this.parentElement.classList.toggle('open');
+        });
+      });
+
+      document.querySelectorAll('.study-card__checkbox').forEach(function (cb) {
+        cb.addEventListener('change', function (e) {
+          e.stopPropagation();
+          var id = this.dataset.id;
+          checkedItems[id] = this.checked;
+          saveProgress();
+          updateProgress();
+          var card = this.closest('.study-card');
+          if (this.checked) {
+            card.classList.add('checked');
+          } else {
+            card.classList.remove('checked');
+          }
+        });
+      });
+
+      // Update active sidebar link
+      document.querySelectorAll('.sidebar__link').forEach(function (link) {
+        link.classList.remove('active');
+        if (link.dataset.section === sectionKey) link.classList.add('active');
+      });
+    }
+
+    // ========================================
+    // Sidebar Navigation
+    // ========================================
+    document.querySelectorAll('.sidebar__link').forEach(function (link) {
+      // Add count badge
+      var section = link.dataset.section;
+      if (section && studyData[section]) {
+        var span = document.createElement('span');
+        span.className = 'sidebar__link-count';
+        span.textContent = '0/' + studyData[section].cards.length;
+        link.appendChild(span);
+      }
+
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var s = this.dataset.section;
+        if (s) renderSection(s);
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('open');
+      });
+    });
+
+    // Expand/Collapse all
+    document.getElementById('expandAll').addEventListener('click', function () {
+      document.querySelectorAll('.study-card').forEach(function (c) { c.classList.add('open'); });
+    });
+
+    document.getElementById('collapseAll').addEventListener('click', function () {
+      document.querySelectorAll('.study-card').forEach(function (c) { c.classList.remove('open'); });
+    });
+
+    // Mobile sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function () {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // ========================================
+    // Init
+    // ========================================
+    loadProgress().then(function() {
+      renderSection('services');
+      updateProgress();
+    });
+  })();
+  </script>
+</body>
+</html>

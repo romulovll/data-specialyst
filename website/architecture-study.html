@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Architecture — Study Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --accent-primary: #8b5cf6;
+      --accent-secondary: #a78bfa;
+      --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1);
+      --status-complete: #10b981;
+      --status-in-progress: #f59e0b;
+      --status-planned: #6b7280;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-subtle: #1f2937;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-body); background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+    .app { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border-subtle); position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 50; }
+    .sidebar__header { padding: 1.25rem; border-bottom: 1px solid var(--border-subtle); }
+    .sidebar__title { font-size: 0.95rem; font-weight: 700; }
+    .sidebar__subtitle { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); }
+    .sidebar__progress { margin-top: 0.75rem; }
+    .sidebar__progress-text { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem; font-family: var(--font-mono); }
+    .sidebar__progress-bar { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+    .sidebar__progress-fill { height: 100%; background: var(--accent-gradient); border-radius: 3px; transition: width 0.5s ease; }
+    .sidebar__nav { padding: 0.75rem 0; }
+    .sidebar__section-title { font-size: 0.65rem; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 0.75rem 1.25rem 0.35rem; }
+    .sidebar__link { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 1.25rem; color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; transition: all 0.2s; border-left: 2px solid transparent; cursor: pointer; background: none; border-right: none; border-top: none; border-bottom: none; width: 100%; text-align: left; }
+    .sidebar__link:hover { color: var(--text-primary); background: rgba(139,92,246,0.05); }
+    .sidebar__link.active { color: var(--accent-primary); border-left-color: var(--accent-primary); background: rgba(139,92,246,0.08); }
+    .sidebar__link-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-planned); flex-shrink: 0; }
+    .sidebar__link-dot--done { background: var(--status-complete); }
+    .sidebar__link-dot--active { background: var(--status-in-progress); }
+    .sidebar__link-count { margin-left: auto; font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); }
+    .sidebar__footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border-subtle); font-size: 0.8rem; }
+    .sidebar__footer a { color: var(--accent-primary); text-decoration: none; }
+
+    .sidebar-toggle { display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border-radius: 50%; background: var(--accent-gradient); border: none; color: white; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(139,92,246,0.3); }
+
+    /* Main */
+    .main { margin-left: 280px; flex: 1; min-width: 0; }
+    .main__header { position: sticky; top: 0; z-index: 40; background: rgba(10,14,23,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .main__header h1 { font-size: 1.1rem; font-weight: 600; }
+    .main__header-actions { display: flex; gap: 0.75rem; }
+    .main__header-btn { font-family: var(--font-mono); font-size: 0.75rem; padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+    .main__header-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+    .content { padding: 2rem; max-width: 900px; }
+
+    /* Study cards */
+    .study-section__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+    .study-section__desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .study-card { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; }
+    .study-card__header { padding: 1.25rem 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; }
+    .study-card__header:hover { background: rgba(139,92,246,0.03); }
+    .study-card__header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .study-card__checkbox { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--border-subtle); border-radius: 4px; cursor: pointer; position: relative; flex-shrink: 0; transition: all 0.2s; }
+    .study-card__checkbox:checked { background: var(--status-complete); border-color: var(--status-complete); }
+    .study-card__checkbox:checked::after { content: '\2713'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: white; font-size: 0.75rem; font-weight: 700; }
+    .study-card__name { font-size: 0.95rem; font-weight: 600; }
+    .study-card.checked .study-card__name { color: var(--status-complete); text-decoration: line-through; opacity: 0.7; }
+    .study-card__arrow { color: var(--text-muted); font-size: 0.8rem; transition: transform 0.3s; }
+    .study-card.open .study-card__arrow { transform: rotate(180deg); }
+    .study-card__body { display: none; padding: 0 1.5rem 1.5rem; border-top: 1px solid var(--border-subtle); }
+    .study-card.open .study-card__body { display: block; }
+    .study-card__body h3 { font-size: 0.9rem; font-weight: 600; color: var(--accent-primary); margin: 1.25rem 0 0.5rem; }
+    .study-card__body h3:first-child { margin-top: 1rem; }
+    .study-card__body p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.5rem; }
+    .study-card__body ul { list-style: none; margin-bottom: 0.75rem; }
+    .study-card__body ul li { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; padding-left: 1rem; position: relative; margin-bottom: 0.3rem; }
+    .study-card__body ul li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 4px; height: 4px; border-radius: 50%; background: var(--accent-primary); }
+    .study-card__body strong { color: var(--text-primary); }
+    .study-card__body a { color: var(--accent-primary); text-decoration: none; }
+    .study-card__body a:hover { text-decoration: underline; }
+
+    .study-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.8rem; }
+    .study-table th { text-align: left; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); color: var(--accent-primary); font-family: var(--font-mono); font-weight: 500; font-size: 0.75rem; border-bottom: 1px solid var(--border-subtle); }
+    .study-table td { padding: 0.5rem 0.75rem; color: var(--text-secondary); border-bottom: 1px solid rgba(31,41,55,0.5); }
+
+    .resource-link { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; margin: 0.2rem; transition: all 0.2s; }
+    .resource-link:hover { border-color: var(--accent-primary); transform: translateY(-1px); text-decoration: none; }
+
+    .exam-tip { background: rgba(245,158,11,0.08); border-left: 3px solid var(--status-in-progress); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.8rem; }
+    .exam-tip__label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--status-in-progress); text-transform: uppercase; margin-bottom: 0.25rem; }
+    .exam-tip p { color: var(--text-secondary); margin: 0; }
+
+    /* Path indicator */
+    .path-indicator { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    .path-step { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+    .path-step__dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; }
+    .path-step--active .path-step__dot { background: var(--accent-gradient); color: white; }
+    .path-step--next .path-step__dot { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+    .path-step--active .path-step__label { color: var(--text-primary); font-weight: 600; }
+    .path-step--next .path-step__label { color: var(--text-muted); }
+    .path-arrow { color: var(--text-muted); font-size: 0.8rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: flex; align-items: center; justify-content: center; }
+      .main { margin-left: 0; }
+      .content { padding: 1.5rem 1rem; }
+      .path-indicator { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__header">
+        <div class="sidebar__title">Data Architecture Hub</div>
+        <div class="sidebar__subtitle">Step 1 of your journey</div>
+        <div class="sidebar__progress">
+          <div class="sidebar__progress-text"><span>Progress</span><span id="progressText">0 / 42</span></div>
+          <div class="sidebar__progress-bar"><div class="sidebar__progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <nav class="sidebar__nav" id="sidebarNav">
+        <div class="sidebar__section-title">Foundations</div>
+        <button class="sidebar__link active" data-section="fundamentals"><span class="sidebar__link-dot"></span>Architecture Fundamentals</button>
+        <button class="sidebar__link" data-section="modeling"><span class="sidebar__link-dot"></span>Data Modeling</button>
+        <button class="sidebar__link" data-section="governance"><span class="sidebar__link-dot"></span>Data Governance</button>
+
+        <div class="sidebar__section-title">Patterns & Design</div>
+        <button class="sidebar__link" data-section="patterns"><span class="sidebar__link-dot"></span>Architecture Patterns</button>
+        <button class="sidebar__link" data-section="platforms"><span class="sidebar__link-dot"></span>Platform Design (GCP)</button>
+        <button class="sidebar__link" data-section="modern"><span class="sidebar__link-dot"></span>Modern Architectures</button>
+
+        <div class="sidebar__section-title">Books & Resources</div>
+        <button class="sidebar__link" data-section="books"><span class="sidebar__link-dot"></span>Essential Reading</button>
+        <button class="sidebar__link" data-section="courses"><span class="sidebar__link-dot"></span>Courses & Certs</button>
+      </nav>
+      <div class="sidebar__footer">
+        <a href="study.html">GCP PDE Study</a> &middot; <a href="index.html">Portfolio</a>
+      </div>
+    </aside>
+
+    <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 id="sectionTitle">Architecture Fundamentals</h1>
+        <div class="main__header-actions">
+          <button class="main__header-btn" id="expandAll">Expand All</button>
+          <button class="main__header-btn" id="collapseAll">Collapse All</button>
+        </div>
+      </header>
+      <div class="content">
+        <!-- Learning path indicator -->
+        <div class="path-indicator">
+          <div class="path-step path-step--active"><div class="path-step__dot">1</div><span class="path-step__label">GCP Cloud Architect</span></div>
+          <span class="path-arrow">&rarr;</span>
+          <div class="path-step path-step--next"><div class="path-step__dot">2</div><span class="path-step__label">GCP Data Engineer</span></div>
+          <span class="path-arrow">&rarr;</span>
+          <div class="path-step path-step--next"><div class="path-step__dot">3</div><span class="path-step__label">AI Reference</span></div>
+        </div>
+        <div id="content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var data = {
+      fundamentals: {
+        title: 'Architecture Fundamentals',
+        description: 'Core concepts every data architect must know. Start here.',
+        cards: [
+          { id: 'da-what', name: 'What is Data Architecture?', content: '<h3>Definition</h3><p>Data architecture defines <strong>how data is collected, stored, transformed, distributed, and consumed</strong> in an organization. It is the blueprint that aligns data strategy with business goals.</p><h3>Data Architect vs Data Engineer</h3><table class="study-table"><thead><tr><th>Aspect</th><th>Data Architect</th><th>Data Engineer</th></tr></thead><tbody><tr><td>Focus</td><td>Design & strategy</td><td>Build & maintain</td></tr><tr><td>Scope</td><td>Enterprise-wide</td><td>Project/team level</td></tr><tr><td>Output</td><td>Blueprints, standards, governance</td><td>Pipelines, APIs, databases</td></tr><tr><td>Analogy</td><td>Building architect</td><td>Construction engineer</td></tr></tbody></table><h3>Why it matters for your career</h3><ul><li>AI will automate pipeline code — architecture decisions are harder to automate</li><li>Higher salary ceiling and strategic influence</li><li>You already think like an architect (CoE, governance, platform design)</li></ul>' },
+          { id: 'da-layers', name: 'Data Architecture Layers', content: '<h3>The 5 Layers</h3><table class="study-table"><thead><tr><th>Layer</th><th>Purpose</th><th>GCP Example</th></tr></thead><tbody><tr><td><strong>Ingestion</strong></td><td>Collect data from sources</td><td>Pub/Sub, Dataflow, DMS</td></tr><tr><td><strong>Storage</strong></td><td>Persist raw and processed data</td><td>GCS, BigQuery, Bigtable</td></tr><tr><td><strong>Processing</strong></td><td>Transform and enrich data</td><td>Dataflow, Dataproc, BigQuery</td></tr><tr><td><strong>Serving</strong></td><td>Deliver data to consumers</td><td>BigQuery, APIs, Looker</td></tr><tr><td><strong>Governance</strong></td><td>Control quality, security, lineage</td><td>Dataplex, Data Catalog, DLP</td></tr></tbody></table><h3>Key principle: Separation of concerns</h3><p>Each layer should be independent. You should be able to change your ingestion without affecting your serving layer.</p>' },
+          { id: 'da-principles', name: 'Architecture Design Principles', content: '<h3>Core Principles</h3><ul><li><strong>Scalability:</strong> Design for 10x growth without redesign</li><li><strong>Separation of compute and storage:</strong> Scale them independently (GCS + Dataflow, not HDFS)</li><li><strong>Schema-on-read vs schema-on-write:</strong> Data lakes (read) vs data warehouses (write)</li><li><strong>Immutability:</strong> Never update raw data — append and version</li><li><strong>Idempotency:</strong> Running a pipeline twice produces the same result</li><li><strong>Least privilege:</strong> Grant minimum access needed</li><li><strong>Observability:</strong> If you can\'t measure it, you can\'t manage it</li></ul><div class="exam-tip"><div class="exam-tip__label">Architecture Mindset</div><p>Always ask: "What happens when this fails?" and "What happens when this scales 100x?"</p></div>' },
+          { id: 'da-dmbok', name: 'DAMA-DMBOK Framework', content: '<h3>The 11 Knowledge Areas</h3><table class="study-table"><thead><tr><th>#</th><th>Knowledge Area</th><th>What it covers</th></tr></thead><tbody><tr><td>1</td><td><strong>Data Governance</strong> (center)</td><td>Policies, standards, stewardship</td></tr><tr><td>2</td><td>Data Architecture</td><td>Blueprints, models, data flow</td></tr><tr><td>3</td><td>Data Modeling & Design</td><td>Conceptual, logical, physical models</td></tr><tr><td>4</td><td>Data Storage & Operations</td><td>Database management, operations</td></tr><tr><td>5</td><td>Data Security</td><td>Encryption, access control, privacy</td></tr><tr><td>6</td><td>Data Integration & Interoperability</td><td>ETL, APIs, data sharing</td></tr><tr><td>7</td><td>Document & Content Management</td><td>Unstructured data</td></tr><tr><td>8</td><td>Reference & Master Data</td><td>Golden records, deduplication</td></tr><tr><td>9</td><td>Data Warehousing & BI</td><td>Analytics, reporting</td></tr><tr><td>10</td><td>Metadata Management</td><td>Data about data, catalogs</td></tr><tr><td>11</td><td>Data Quality</td><td>Accuracy, completeness, consistency</td></tr></tbody></table><h3>Resources</h3><a class="resource-link" href="https://atlan.com/dama-dmbok-framework/" target="_blank">DAMA DMBOK Guide (Atlan)</a> <a class="resource-link" href="https://dama.org/learning-resources/dama-data-management-body-of-knowledge-dmbok/" target="_blank">DAMA Official</a>' }
+        ]
+      },
+      modeling: {
+        title: 'Data Modeling',
+        description: 'The core skill of a Data Architect — designing how data is structured.',
+        cards: [
+          { id: 'dm-levels', name: 'Three Levels of Data Modeling', content: '<table class="study-table"><thead><tr><th>Level</th><th>What</th><th>Audience</th><th>Detail</th></tr></thead><tbody><tr><td><strong>Conceptual</strong></td><td>Business entities and relationships</td><td>Business stakeholders</td><td>Low — no columns, just entities</td></tr><tr><td><strong>Logical</strong></td><td>Attributes, keys, relationships</td><td>Data architects</td><td>Medium — normalized, no tech specifics</td></tr><tr><td><strong>Physical</strong></td><td>Tables, columns, indexes, partitions</td><td>Data engineers</td><td>High — database-specific</td></tr></tbody></table><div class="exam-tip"><div class="exam-tip__label">Key Insight</div><p>A data architect works primarily at the <strong>conceptual and logical</strong> levels. Data engineers implement the physical model.</p></div>' },
+          { id: 'dm-dimensional', name: 'Dimensional Modeling (Kimball)', content: '<h3>Star Schema</h3><p>The most common analytical model. A central <strong>fact table</strong> surrounded by <strong>dimension tables</strong>.</p><ul><li><strong>Fact table:</strong> Metrics/measurements (revenue, clicks, orders). Contains foreign keys to dimensions.</li><li><strong>Dimension table:</strong> Context (who, what, when, where). Contains descriptive attributes.</li></ul><h3>Example: E-commerce</h3><table class="study-table"><thead><tr><th>Fact: Orders</th><th>Dim: Customer</th><th>Dim: Product</th><th>Dim: Date</th></tr></thead><tbody><tr><td>order_id, customer_key, product_key, date_key, revenue, quantity</td><td>customer_key, name, email, segment, country</td><td>product_key, name, category, brand, price</td><td>date_key, date, month, quarter, year</td></tr></tbody></table><h3>Snowflake Schema</h3><p>Like star schema but dimensions are normalized (broken into sub-tables). More complex queries but less storage.</p><h3>When to use</h3><ul><li><strong>Star schema:</strong> Most analytics/BI use cases — simple, fast queries</li><li><strong>Snowflake:</strong> When storage matters more than query simplicity</li></ul>' },
+          { id: 'dm-datavault', name: 'Data Vault 2.0', content: '<h3>What is Data Vault?</h3><p>A modeling methodology designed for <strong>data warehouses that need to handle change</strong> — multiple sources, evolving schemas, full audit history.</p><h3>Core Components</h3><table class="study-table"><thead><tr><th>Component</th><th>Purpose</th><th>Contents</th></tr></thead><tbody><tr><td><strong>Hub</strong></td><td>Business keys</td><td>Business key, load date, source</td></tr><tr><td><strong>Link</strong></td><td>Relationships between hubs</td><td>Foreign keys to hubs, load date</td></tr><tr><td><strong>Satellite</strong></td><td>Descriptive attributes + history</td><td>Attributes, load date, end date</td></tr></tbody></table><h3>Data Vault vs Star Schema</h3><table class="study-table"><thead><tr><th>Aspect</th><th>Data Vault</th><th>Star Schema</th></tr></thead><tbody><tr><td>Best for</td><td>Integration layer (raw/silver)</td><td>Presentation layer (gold)</td></tr><tr><td>History</td><td>Full audit trail built-in</td><td>Requires SCD patterns</td></tr><tr><td>Flexibility</td><td>Easy to add sources</td><td>Schema changes are harder</td></tr><tr><td>Query speed</td><td>Slower (many joins)</td><td>Fast (denormalized)</td></tr></tbody></table><div class="exam-tip"><div class="exam-tip__label">Modern Pattern</div><p>Use <strong>Data Vault in the silver layer</strong> (integration) and <strong>Star Schema in the gold layer</strong> (serving). They are partners, not rivals.</p></div>' },
+          { id: 'dm-normalization', name: 'Normalization & Denormalization', content: '<h3>Normal Forms</h3><table class="study-table"><thead><tr><th>Form</th><th>Rule</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>1NF</strong></td><td>No repeating groups, atomic values</td><td>Basic structure</td></tr><tr><td><strong>2NF</strong></td><td>1NF + no partial dependencies</td><td>Remove redundancy</td></tr><tr><td><strong>3NF</strong></td><td>2NF + no transitive dependencies</td><td>Full normalization for OLTP</td></tr></tbody></table><h3>When to normalize vs denormalize</h3><ul><li><strong>Normalize (3NF):</strong> Transactional systems (OLTP), source systems, operational databases</li><li><strong>Denormalize (Star Schema):</strong> Analytical systems (OLAP), data warehouses, reporting</li></ul><p>BigQuery is <strong>columnar</strong> — denormalized schemas with nested/repeated fields (ARRAY, STRUCT) are often optimal.</p>' },
+          { id: 'dm-scd', name: 'Slowly Changing Dimensions (SCD)', content: '<h3>SCD Types</h3><table class="study-table"><thead><tr><th>Type</th><th>Strategy</th><th>History?</th><th>Use case</th></tr></thead><tbody><tr><td><strong>Type 1</strong></td><td>Overwrite</td><td>No</td><td>Corrections, don\'t need history</td></tr><tr><td><strong>Type 2</strong></td><td>Add new row + versioning</td><td>Full</td><td>Track all changes over time</td></tr><tr><td><strong>Type 3</strong></td><td>Add column (current + previous)</td><td>Limited</td><td>Track last change only</td></tr></tbody></table><p><strong>Type 2 is most common</strong> in data warehouses. Implemented with <code>effective_date</code>, <code>end_date</code>, and <code>is_current</code> flags.</p>' }
+        ]
+      },
+      governance: {
+        title: 'Data Governance',
+        description: 'Policies, quality, compliance, and stewardship. Essential for architects.',
+        cards: [
+          { id: 'dg-framework', name: 'Data Governance Framework', content: '<h3>Key Components</h3><ul><li><strong>Data ownership:</strong> Who is accountable for each data domain?</li><li><strong>Data stewardship:</strong> Who ensures quality day-to-day?</li><li><strong>Data policies:</strong> Rules for access, retention, quality, privacy</li><li><strong>Data standards:</strong> Naming conventions, formats, definitions</li><li><strong>Data catalog:</strong> Searchable inventory of all data assets</li><li><strong>Data lineage:</strong> Where data comes from and where it goes</li><li><strong>Data quality:</strong> Accuracy, completeness, timeliness, consistency</li></ul><h3>Your experience</h3><p>You already led GDPR governance at act digital — this is data governance in practice. Now you need the vocabulary and frameworks to design it at scale.</p>' },
+          { id: 'dg-quality', name: 'Data Quality Dimensions', content: '<table class="study-table"><thead><tr><th>Dimension</th><th>Question it answers</th><th>Example check</th></tr></thead><tbody><tr><td><strong>Accuracy</strong></td><td>Is the data correct?</td><td>Email format validation</td></tr><tr><td><strong>Completeness</strong></td><td>Is anything missing?</td><td>NULL checks on required fields</td></tr><tr><td><strong>Consistency</strong></td><td>Does it match across systems?</td><td>Same customer ID everywhere</td></tr><tr><td><strong>Timeliness</strong></td><td>Is it fresh enough?</td><td>Data arrived within SLA</td></tr><tr><td><strong>Uniqueness</strong></td><td>Are there duplicates?</td><td>Dedup on primary keys</td></tr><tr><td><strong>Validity</strong></td><td>Does it conform to rules?</td><td>Status in allowed values</td></tr></tbody></table><h3>GCP tools for data quality</h3><ul><li><strong>Dataplex:</strong> Define and enforce quality rules automatically</li><li><strong>Data Catalog:</strong> Tag data with quality metadata</li><li><strong>BigQuery:</strong> ASSERT statements, scheduled quality checks</li></ul>' },
+          { id: 'dg-compliance', name: 'Compliance & Privacy (GDPR/LGPD)', content: '<h3>Key requirements you must design for</h3><table class="study-table"><thead><tr><th>Right</th><th>What it means</th><th>Architecture impact</th></tr></thead><tbody><tr><td>Right to access</td><td>Users can request their data</td><td>Must be able to query by user ID across all systems</td></tr><tr><td>Right to erasure</td><td>Users can request deletion</td><td>Must support record-level deletion (BigQuery DML DELETE)</td></tr><tr><td>Right to portability</td><td>Users can export their data</td><td>Standardized export formats (JSON, CSV)</td></tr><tr><td>Data minimization</td><td>Collect only what\'s needed</td><td>Design schemas with purpose limitation</td></tr><tr><td>Data residency</td><td>Data stays in specific regions</td><td>Regional datasets, buckets, and processing</td></tr></tbody></table><div class="exam-tip"><div class="exam-tip__label">Your Advantage</div><p>You managed GDPR-compliant pipelines at act digital. Frame this as <strong>privacy-by-design architecture</strong> — you don\'t just comply, you architect for compliance.</p></div>' },
+          { id: 'dg-catalog', name: 'Data Catalogs & Metadata', content: '<h3>What a Data Catalog does</h3><ul><li><strong>Discovery:</strong> Find datasets by name, tag, description</li><li><strong>Documentation:</strong> Business definitions, owners, SLAs</li><li><strong>Lineage:</strong> Track data origin and transformations</li><li><strong>Access control:</strong> Who can see/use what data</li><li><strong>Quality scores:</strong> Trust indicators for each dataset</li></ul><h3>GCP tools</h3><ul><li><strong>Data Catalog:</strong> Auto-discovers BigQuery, Pub/Sub, GCS. Tag templates for custom metadata.</li><li><strong>Dataplex:</strong> Organizes data lakes into zones (raw &rarr; curated). Quality rules, lineage, auto-discovery.</li></ul>' }
+        ]
+      },
+      patterns: {
+        title: 'Architecture Patterns',
+        description: 'The 12 patterns every data architect should know.',
+        cards: [
+          { id: 'ap-medallion', name: 'Medallion Architecture (Bronze/Silver/Gold)', content: '<h3>The three layers</h3><table class="study-table"><thead><tr><th>Layer</th><th>Data State</th><th>Purpose</th><th>GCP Tool</th></tr></thead><tbody><tr><td><strong>Bronze</strong> (Raw)</td><td>As-is from source</td><td>Landing zone, full fidelity</td><td>GCS, BigQuery raw datasets</td></tr><tr><td><strong>Silver</strong> (Cleaned)</td><td>Validated, deduplicated</td><td>Integration, data quality</td><td>Dataflow transforms, BigQuery</td></tr><tr><td><strong>Gold</strong> (Business)</td><td>Aggregated, modeled</td><td>Analytics-ready, star schema</td><td>BigQuery, Looker</td></tr></tbody></table><p>This is the <strong>most widely adopted</strong> modern data architecture pattern. Also called "multi-hop architecture."</p>' },
+          { id: 'ap-lambda-kappa', name: 'Lambda vs Kappa Architecture', content: '<table class="study-table"><thead><tr><th>Pattern</th><th>How it works</th><th>Pros</th><th>Cons</th></tr></thead><tbody><tr><td><strong>Lambda</strong></td><td>Separate batch + speed layers, merged at serving</td><td>Accurate batch + fast streaming</td><td>Two codebases to maintain</td></tr><tr><td><strong>Kappa</strong></td><td>Everything is a stream (replay for batch)</td><td>Single codebase</td><td>Harder for complex transformations</td></tr></tbody></table><div class="exam-tip"><div class="exam-tip__label">Modern Reality</div><p>Dataflow/Apache Beam unifies batch and streaming in one SDK — making Kappa-like architectures practical. Most new GCP designs use <strong>unified pipelines</strong> instead of Lambda.</p></div>' },
+          { id: 'ap-mesh', name: 'Data Mesh', content: '<h3>4 Principles</h3><ul><li><strong>Domain ownership:</strong> Each business domain owns its data products</li><li><strong>Data as a product:</strong> Data has SLAs, documentation, discoverability</li><li><strong>Self-serve platform:</strong> Infrastructure team provides tools, domains build</li><li><strong>Federated governance:</strong> Global policies, local autonomy</li></ul><h3>When to use Data Mesh</h3><ul><li>Large organizations with multiple domains</li><li>Centralized data team is a bottleneck</li><li>Domains have different data needs and pace</li></ul><h3>When NOT to use</h3><ul><li>Small teams (&lt;50 engineers)</li><li>Single product/domain</li><li>Team lacks data maturity</li></ul><h3>Resources</h3><a class="resource-link" href="https://www.coursera.org/learn/data-mesh-architectures-implementations" target="_blank">Coursera: Data Mesh</a>' },
+          { id: 'ap-lakehouse', name: 'Data Lakehouse', content: '<h3>What is it?</h3><p>Combines the best of <strong>data lakes</strong> (cheap storage, schema flexibility) and <strong>data warehouses</strong> (ACID transactions, SQL, performance).</p><h3>Key technologies</h3><ul><li><strong>Delta Lake</strong> — Databricks, on top of Spark</li><li><strong>Apache Iceberg</strong> — Open standard, GCP BigLake integration</li><li><strong>Apache Hudi</strong> — Upserts, incremental processing</li></ul><h3>GCP Implementation</h3><ul><li><strong>BigLake:</strong> Query data in GCS with BigQuery SQL — lakehouse on GCP</li><li><strong>BigQuery + GCS:</strong> External tables, native Iceberg support</li></ul><p>This pattern is increasingly popular as it eliminates the "copy data from lake to warehouse" step.</p>' },
+          { id: 'ap-elt', name: 'ETL vs ELT vs Reverse ETL', content: '<table class="study-table"><thead><tr><th>Pattern</th><th>Flow</th><th>When to use</th></tr></thead><tbody><tr><td><strong>ETL</strong></td><td>Extract &rarr; Transform &rarr; Load</td><td>Traditional, transform before loading</td></tr><tr><td><strong>ELT</strong></td><td>Extract &rarr; Load &rarr; Transform</td><td>Modern clouds (BigQuery transforms in SQL)</td></tr><tr><td><strong>Reverse ETL</strong></td><td>Warehouse &rarr; Operational systems</td><td>Push analytics back to CRM, marketing tools</td></tr></tbody></table><div class="exam-tip"><div class="exam-tip__label">Key Trend</div><p>ELT is the dominant pattern on GCP. Load raw data into BigQuery, then transform with SQL/dbt. The warehouse IS the processing engine.</p></div>' },
+          { id: 'ap-event', name: 'Event-Driven Architecture', content: '<h3>Core concepts</h3><ul><li><strong>Event:</strong> Something that happened (order placed, user clicked)</li><li><strong>Event broker:</strong> Pub/Sub, Kafka — decouples producers and consumers</li><li><strong>Event sourcing:</strong> Store events as the source of truth, derive state</li><li><strong>CQRS:</strong> Separate read and write models</li></ul><h3>GCP implementation</h3><ul><li><strong>Pub/Sub</strong> as the event bus</li><li><strong>Dataflow</strong> as the stream processor</li><li><strong>BigQuery</strong> for analytics (event store)</li><li><strong>Bigtable</strong> for real-time state lookups</li></ul><p>You do this at Vigil — 45K RPS streaming security events through an event-driven architecture.</p>' }
+        ]
+      },
+      platforms: {
+        title: 'Platform Design (GCP)',
+        description: 'Designing data platforms on Google Cloud — applied architecture.',
+        cards: [
+          { id: 'pd-reference', name: 'GCP Reference Data Platform', content: '<h3>Standard architecture</h3><ul><li><strong>Sources</strong> &rarr; Pub/Sub (streaming) / GCS (batch)</li><li><strong>Ingestion</strong> &rarr; Dataflow / DMS / Transfer Service</li><li><strong>Raw Storage</strong> &rarr; GCS (data lake) + BigQuery (raw datasets)</li><li><strong>Processing</strong> &rarr; Dataflow / Dataproc / BigQuery SQL</li><li><strong>Serving</strong> &rarr; BigQuery (analytics) / Bigtable (low-latency) / APIs</li><li><strong>Orchestration</strong> &rarr; Composer (Airflow)</li><li><strong>Governance</strong> &rarr; Dataplex + Data Catalog + DLP</li><li><strong>Monitoring</strong> &rarr; Cloud Monitoring + Logging</li><li><strong>Security</strong> &rarr; IAM + VPC-SC + CMEK</li><li><strong>IaC</strong> &rarr; Terraform</li></ul><div class="exam-tip"><div class="exam-tip__label">Your Portfolio</div><p>Diagram this architecture and publish it on your website. It demonstrates you can design end-to-end data platforms.</p></div>' },
+          { id: 'pd-cost', name: 'Cost Architecture', content: '<h3>Cost optimization as architecture</h3><ul><li><strong>Storage tiering:</strong> Hot data in BigQuery, cold in GCS Archive</li><li><strong>Compute right-sizing:</strong> Serverless (Dataflow) vs clusters (Dataproc)</li><li><strong>BigQuery editions:</strong> On-demand for exploration, Standard/Enterprise for production</li><li><strong>Ephemeral resources:</strong> Dataproc clusters that spin up and tear down</li><li><strong>Lifecycle policies:</strong> Auto-transition GCS objects to cheaper classes</li></ul><p>A good architect thinks about <strong>cost per query</strong>, <strong>cost per GB stored</strong>, and <strong>cost per pipeline run</strong>.</p>' },
+          { id: 'pd-security', name: 'Security Architecture', content: '<h3>Defense in depth for data platforms</h3><table class="study-table"><thead><tr><th>Layer</th><th>Control</th><th>GCP tool</th></tr></thead><tbody><tr><td>Network</td><td>Perimeter security</td><td>VPC Service Controls</td></tr><tr><td>Identity</td><td>Who can access</td><td>IAM, Workload Identity</td></tr><tr><td>Data</td><td>What they can see</td><td>Column-level security, policy tags</td></tr><tr><td>Encryption</td><td>Data at rest/in transit</td><td>CMEK, CSEK, default</td></tr><tr><td>Detection</td><td>Find sensitive data</td><td>DLP inspection</td></tr><tr><td>Audit</td><td>Who did what</td><td>Cloud Audit Logs</td></tr></tbody></table>' },
+          { id: 'pd-dr', name: 'Disaster Recovery Architecture', content: '<h3>DR patterns by RPO/RTO</h3><table class="study-table"><thead><tr><th>Pattern</th><th>RPO</th><th>RTO</th><th>Cost</th><th>GCP Implementation</th></tr></thead><tbody><tr><td>Cold standby</td><td>Hours</td><td>Hours</td><td>$</td><td>Backups in multi-region GCS</td></tr><tr><td>Warm standby</td><td>Minutes</td><td>Minutes</td><td>$$</td><td>Cross-region read replicas</td></tr><tr><td>Hot standby</td><td>Seconds</td><td>Seconds</td><td>$$$</td><td>Spanner multi-region, BQ multi-region</td></tr></tbody></table>' }
+        ]
+      },
+      modern: {
+        title: 'Modern Architectures',
+        description: 'Emerging patterns: AI-ready platforms, real-time, and data products.',
+        cards: [
+          { id: 'ma-ai', name: 'AI-Ready Data Architecture', content: '<h3>What makes a platform "AI-ready"?</h3><ul><li><strong>Feature Store:</strong> Centralized, versioned features for ML models (Vertex AI Feature Store)</li><li><strong>Vector databases:</strong> Store embeddings for RAG/semantic search</li><li><strong>Training data pipelines:</strong> Curated, labeled, versioned datasets</li><li><strong>Model serving infrastructure:</strong> Low-latency prediction endpoints</li><li><strong>Data quality for ML:</strong> Drift detection, schema validation, bias monitoring</li></ul><h3>RAG Architecture (hot topic)</h3><ul><li>Documents &rarr; Embeddings &rarr; Vector store &rarr; LLM query</li><li>Your data platform feeds the AI — this is where Data Architecture meets AI</li></ul><div class="exam-tip"><div class="exam-tip__label">Your Goal</div><p>Position yourself as: "I design data platforms that power AI." This is the rarest and most valuable skill combination in 2026.</p></div>' },
+          { id: 'ma-realtime', name: 'Real-Time Analytics Architecture', content: '<h3>The real-time stack on GCP</h3><ul><li><strong>Event source</strong> &rarr; Applications, IoT, clickstreams</li><li><strong>Pub/Sub</strong> &rarr; Event ingestion (serverless, global)</li><li><strong>Dataflow</strong> &rarr; Stream processing (windowing, aggregation)</li><li><strong>Bigtable</strong> &rarr; Real-time state store (ms latency)</li><li><strong>BigQuery</strong> &rarr; Streaming inserts for analytics</li><li><strong>Looker</strong> &rarr; Real-time dashboards</li></ul><p>You already built this at Vigil (45K RPS). Document the architecture decisions you made and why.</p>' },
+          { id: 'ma-dataproducts', name: 'Data Products', content: '<h3>What is a Data Product?</h3><p>A data product is a <strong>self-contained, documented, discoverable dataset</strong> with defined SLAs, quality standards, and an owner.</p><h3>Characteristics</h3><ul><li><strong>Discoverable:</strong> Listed in a data catalog with description</li><li><strong>Addressable:</strong> Has a stable, well-known access path</li><li><strong>Trustworthy:</strong> Quality checks, SLAs, freshness guarantees</li><li><strong>Self-describing:</strong> Schema, lineage, documentation included</li><li><strong>Interoperable:</strong> Standard formats, can be consumed by different tools</li><li><strong>Secure:</strong> Access controls, PII handling defined</li></ul><p>Thinking in data products is what separates a data engineer ("I built a pipeline") from a data architect ("I designed a data product ecosystem").</p>' }
+        ]
+      },
+      books: {
+        title: 'Essential Reading',
+        description: 'The books every aspiring data architect should read.',
+        cards: [
+          { id: 'bk-ddia', name: 'Designing Data-Intensive Applications (2nd Ed)', content: '<h3>By Martin Kleppmann & Chris Riccomini (2026)</h3><p>THE foundational book for data architecture. Covers distributed systems, replication, partitioning, batch/stream processing, and consistency models.</p><h3>Key chapters for you</h3><ul><li>Ch 3: Storage and retrieval — how databases work internally</li><li>Ch 5-9: Distributed data — replication, partitioning, consistency</li><li>Ch 10-11: Batch and stream processing — Beam/Dataflow concepts</li></ul><a class="resource-link" href="https://www.oreilly.com/library/view/designing-data-intensive-applications/9781098119058/" target="_blank">O\'Reilly</a>' },
+          { id: 'bk-deciphering', name: 'Deciphering Data Architectures', content: '<h3>By James Serra (O\'Reilly)</h3><p>Practical guide comparing <strong>Data Warehouse vs Data Lake vs Data Lakehouse vs Data Mesh</strong>. Helps you understand when to use each pattern.</p><a class="resource-link" href="https://www.amazon.com/Deciphering-Data-Architectures-Warehouse-Lakehouse/dp/1098150767" target="_blank">Amazon</a>' },
+          { id: 'bk-dms', name: 'Data Management at Scale', content: '<h3>By Piethein Strengholt (O\'Reilly)</h3><p>Modern data architecture with <strong>Data Mesh and Data Fabric</strong>. Provides blueprints, principles, and best practices for enterprise-scale data management.</p><a class="resource-link" href="https://www.amazon.com/Data-Management-Scale-Modern-Architecture/dp/1098138864" target="_blank">Amazon</a>' },
+          { id: 'bk-dmbok', name: 'DAMA-DMBOK 2nd Edition', content: '<h3>By DAMA International</h3><p>The data management "bible." Covers all 11 knowledge areas. Dense but comprehensive. Use as a reference, not cover-to-cover reading.</p><p><strong>Note:</strong> DMBOK 3.0 is in progress (expected 2027) — will add AI governance and cloud-native patterns.</p><a class="resource-link" href="https://technicspub.com/dmbok2/" target="_blank">Technics Publications</a> <a class="resource-link" href="https://dama.org/learning-resources/dama-data-management-body-of-knowledge-dmbok/" target="_blank">DAMA Official</a>' }
+        ]
+      },
+      courses: {
+        title: 'Courses & Certifications',
+        description: 'Structured learning paths and certification options.',
+        cards: [
+          { id: 'cr-coursera-dm', name: 'Coursera: Data Modeling and Architecture', content: '<h3>By Microsoft (Free audit)</h3><p>Foundational skills in creating data models. Covers conceptual, logical, physical modeling and data governance principles.</p><a class="resource-link" href="https://www.coursera.org/learn/data-modeling-and-architecture" target="_blank">Enroll Free</a>' },
+          { id: 'cr-coursera-mesh', name: 'Coursera: Data Mesh Architectures', content: '<h3>By Edureka (Free audit)</h3><p>Practical expertise in decentralized, domain-driven data systems. Covers federated governance, domain ownership, and data products.</p><a class="resource-link" href="https://www.coursera.org/learn/data-mesh-architectures-implementations" target="_blank">Enroll Free</a>' },
+          { id: 'cr-dataversity', name: 'Dataversity: Data Architecture Fundamentals', content: '<h3>9-course learning plan</h3><p>Covers data governance, design patterns, metadata, lineage, ETL, data storage, warehousing, and dimensional modeling.</p><a class="resource-link" href="https://training.dataversity.net/learning-paths/daf0-data-architecture-fundamentals-learning-plan" target="_blank">Learning Plan</a> <a class="resource-link" href="https://www.dataversity.net/articles/best-data-architecture-courses/" target="_blank">Course Guide</a>' },
+          { id: 'cr-cdmp', name: 'CDMP Certification (DAMA)', content: '<h3>Certified Data Management Professional</h3><p>The industry-standard certification for data management and architecture. Based on DAMA-DMBOK framework.</p><ul><li><strong>Associate:</strong> Score 60%+ on DMBOK exam</li><li><strong>Practitioner:</strong> Score 70%+</li><li><strong>Master:</strong> Score 80%+</li></ul><p>Consider this after you pass GCP certs — it validates your governance and architecture skills beyond a single cloud.</p><a class="resource-link" href="https://www.udemy.com/course/evaluate-certified-data-management-professional-cdmp-2025/" target="_blank">Udemy Prep</a>' },
+          { id: 'cr-gcp-arch', name: 'GCP Professional Cloud Architect', content: '<h3>Your second GCP certification</h3><p>Validates ability to design, develop, and manage Google Cloud solutions. Covers the Well-Architected Framework pillars: operational excellence, security, reliability, performance, cost, sustainability.</p><ul><li>Includes AI/GenAI case studies in 2026</li><li>Recommended after GCP PDE</li></ul><a class="resource-link" href="https://cloud.google.com/learn/certification/cloud-architect" target="_blank">Official Page</a> <a class="resource-link" href="https://cloud.google.com/learn/certification/guides/professional-cloud-architect" target="_blank">Exam Guide</a>' },
+          { id: 'cr-articles', name: 'Articles & Blogs to Follow', content: '<h3>Stay current</h3><ul><li><a href="https://medium.com/data-science-collective/the-12-data-architecture-patterns-every-data-engineer-should-master-in-2026-3598315879c0" target="_blank">12 Data Architecture Patterns for 2026 (Medium)</a></li><li><a href="https://www.dataversity.net" target="_blank">Dataversity — Data architecture articles</a></li><li><a href="https://www.ccslearningacademy.com/how-to-become-data-architect/" target="_blank">How to Become a Data Architect (Step-by-Step)</a></li><li><a href="https://www.dataquest.io/blog/data-skills-roadmap-2026/" target="_blank">2026 Data Skills Roadmap (Dataquest)</a></li></ul>' }
+        ]
+      }
+    };
+
+    var STORAGE_KEY = 'data-arch-study-progress';
+    var checkedItems = {};
+    var API_URL = 'http://localhost:8000/api';
+
+    function loadProgress() {
+      return fetch(API_URL + '/progress/' + STORAGE_KEY).then(function(r) { return r.json(); }).then(function(d) {
+        checkedItems = d.progress || {};
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
+      }).catch(function() {
+        try { var s = localStorage.getItem(STORAGE_KEY); if (s) checkedItems = JSON.parse(s); } catch(e) {}
+      });
+    }
+    function saveProgress() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
+      fetch(API_URL + '/progress/' + STORAGE_KEY, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ progress: checkedItems }) }).catch(function() {});
+    }
+    function getCheckedCount() { var c=0; for(var k in checkedItems) if(checkedItems[k]) c++; return c; }
+    function getTotalCount() { var t=0; for(var s in data) t += data[s].cards.length; return t; }
+
+    var contentEl = document.getElementById('content');
+    var titleEl = document.getElementById('sectionTitle');
+    var progressText = document.getElementById('progressText');
+    var progressFill = document.getElementById('progressFill');
+
+    function updateProgress() {
+      var checked = getCheckedCount(), total = getTotalCount();
+      var pct = total > 0 ? Math.round((checked/total)*100) : 0;
+      progressText.textContent = checked + ' / ' + total;
+      progressFill.style.width = pct + '%';
+      document.querySelectorAll('.sidebar__link').forEach(function(link) {
+        var section = link.dataset.section;
+        if (!section || !data[section]) return;
+        var dot = link.querySelector('.sidebar__link-dot');
+        var cards = data[section].cards;
+        var sc = cards.filter(function(c){ return checkedItems[c.id]; }).length;
+        var cnt = link.querySelector('.sidebar__link-count');
+        if (cnt) cnt.textContent = sc+'/'+cards.length;
+        dot.className = 'sidebar__link-dot';
+        if (sc === cards.length) dot.classList.add('sidebar__link-dot--done');
+        else if (sc > 0) dot.classList.add('sidebar__link-dot--active');
+      });
+    }
+
+    function renderSection(key) {
+      var section = data[key]; if (!section) return;
+      titleEl.textContent = section.title;
+      var html = '<h2 class="study-section__title">' + section.title + '</h2>';
+      html += '<p class="study-section__desc">' + section.description + '</p>';
+      section.cards.forEach(function(card) {
+        var isChecked = checkedItems[card.id] || false;
+        html += '<div class="study-card' + (isChecked?' checked':'') + '" data-id="'+card.id+'">';
+        html += '<div class="study-card__header"><div class="study-card__header-left">';
+        html += '<input type="checkbox" class="study-card__checkbox" '+(isChecked?'checked':'')+' data-id="'+card.id+'">';
+        html += '<span class="study-card__name">'+card.name+'</span></div>';
+        html += '<span class="study-card__arrow">&#9660;</span></div>';
+        html += '<div class="study-card__body">'+card.content+'</div></div>';
+      });
+      contentEl.innerHTML = html;
+      document.querySelectorAll('.study-card__header').forEach(function(h){
+        h.addEventListener('click', function(e){ if(e.target.classList.contains('study-card__checkbox')) return; this.parentElement.classList.toggle('open'); });
+      });
+      document.querySelectorAll('.study-card__checkbox').forEach(function(cb){
+        cb.addEventListener('change', function(e){
+          e.stopPropagation(); checkedItems[this.dataset.id] = this.checked;
+          saveProgress(); updateProgress();
+          var card = this.closest('.study-card');
+          if(this.checked) card.classList.add('checked'); else card.classList.remove('checked');
+        });
+      });
+      document.querySelectorAll('.sidebar__link').forEach(function(l){ l.classList.remove('active'); if(l.dataset.section===key) l.classList.add('active'); });
+    }
+
+    document.querySelectorAll('.sidebar__link').forEach(function(link){
+      var s = link.dataset.section;
+      if (s && data[s]) { var span = document.createElement('span'); span.className='sidebar__link-count'; span.textContent='0/'+data[s].cards.length; link.appendChild(span); }
+      link.addEventListener('click', function(e){ e.preventDefault(); if(this.dataset.section) renderSection(this.dataset.section); document.getElementById('sidebar').classList.remove('open'); });
+    });
+
+    document.getElementById('expandAll').addEventListener('click', function(){ document.querySelectorAll('.study-card').forEach(function(c){c.classList.add('open');}); });
+    document.getElementById('collapseAll').addEventListener('click', function(){ document.querySelectorAll('.study-card').forEach(function(c){c.classList.remove('open');}); });
+    document.getElementById('sidebarToggle').addEventListener('click', function(){ document.getElementById('sidebar').classList.toggle('open'); });
+
+    loadProgress().then(function() { renderSection('fundamentals'); updateProgress(); });
+  })();
+  </script>
+</body>
+</html>

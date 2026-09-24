@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GCP PDE — Study Resources</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --accent-primary: #06b6d4;
+      --accent-secondary: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #06b6d4, #3b82f6);
+      --status-complete: #10b981;
+      --status-in-progress: #f59e0b;
+      --status-planned: #6b7280;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-subtle: #1f2937;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --max-width: 1000px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-body); background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+    .header { background: rgba(10,14,23,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-subtle); padding: 1rem 2rem; position: sticky; top: 0; z-index: 100; }
+    .header__inner { max-width: var(--max-width); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+    .header__title { font-size: 1.1rem; font-weight: 600; }
+    .header__links { display: flex; gap: 1rem; }
+    .header__links a { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-primary); text-decoration: none; }
+    .header__links a:hover { color: var(--accent-secondary); }
+
+    .container { max-width: var(--max-width); margin: 0 auto; padding: 2rem; }
+
+    .page-title { font-size: 1.8rem; font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; margin-bottom: 0.5rem; }
+    .page-subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+
+    /* Resource Category */
+    .category { margin-bottom: 3rem; }
+    .category__header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); }
+    .category__number { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .category__title { font-size: 1.15rem; font-weight: 600; }
+    .category__tag { font-family: var(--font-mono); font-size: 0.65rem; color: var(--status-in-progress); background: rgba(245,158,11,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+
+    .resources-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+    .resource-card { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.25rem; transition: all 0.3s; display: flex; flex-direction: column; }
+    .resource-card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+    .resource-card__type { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding: 0.15rem 0.5rem; border-radius: 3px; display: inline-block; width: fit-content; }
+    .resource-card__type--official { background: rgba(6,182,212,0.1); color: var(--accent-primary); }
+    .resource-card__type--course { background: rgba(59,130,246,0.1); color: var(--accent-secondary); }
+    .resource-card__type--practice { background: rgba(245,158,11,0.1); color: var(--status-in-progress); }
+    .resource-card__type--video { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .resource-card__type--free { background: rgba(16,185,129,0.1); color: var(--status-complete); }
+    .resource-card__type--docs { background: rgba(107,114,128,0.1); color: var(--text-secondary); }
+
+    .resource-card__title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .resource-card__title a { color: var(--text-primary); text-decoration: none; }
+    .resource-card__title a:hover { color: var(--accent-primary); }
+    .resource-card__desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; flex: 1; }
+    .resource-card__meta { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .resource-card__badge { font-family: var(--font-mono); font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+
+    /* Week mapping */
+    .week-map { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1.25rem; margin-bottom: 2.5rem; }
+    .week-map__title { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--accent-primary); }
+    .week-map__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .week-map__item { font-size: 0.8rem; color: var(--text-secondary); padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: 6px; border-left: 3px solid var(--accent-primary); }
+    .week-map__item strong { color: var(--text-primary); display: block; font-size: 0.75rem; font-family: var(--font-mono); }
+
+    .footer { padding: 2rem; text-align: center; border-top: 1px solid var(--border-subtle); margin-top: 2rem; }
+    .footer p { font-size: 0.8rem; color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .resources-grid { grid-template-columns: 1fr; }
+      .week-map__grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header__inner">
+      <span class="header__title">Study Resources</span>
+      <div class="header__links">
+        <a href="study.html">&larr; Study Hub</a>
+        <a href="assessment.html">Assessment</a>
+        <a href="index.html">Portfolio</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1 class="page-title">GCP Professional Data Engineer Resources</h1>
+    <p class="page-subtitle">All the resources you need, organized by study week and topic. Start from the top.</p>
+
+    <!-- Week mapping -->
+    <div class="week-map">
+      <div class="week-map__title">Which resources for which week?</div>
+      <div class="week-map__grid">
+        <div class="week-map__item"><strong>Week 1</strong>Practice exams + Official exam guide</div>
+        <div class="week-map__item"><strong>Week 2</strong>Bigtable, Spanner, Dataproc, Dataplex docs</div>
+        <div class="week-map__item"><strong>Week 3</strong>BigQuery ML, Vertex AI, DLP, Dataflow docs</div>
+        <div class="week-map__item"><strong>Week 4</strong>Migration, IAM, VPC-SC, encryption docs</div>
+        <div class="week-map__item"><strong>Week 5</strong>Second practice exam + review</div>
+        <div class="week-map__item"><strong>Week 6</strong>Light review + take the exam</div>
+      </div>
+    </div>
+
+    <!-- 1. Official Exam Resources -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">01</span>
+        <span class="category__title">Official Exam Resources</span>
+        <span class="category__tag">Start here</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--official">Official</span>
+          <div class="resource-card__title"><a href="https://cloud.google.com/learn/certification/data-engineer" target="_blank">Professional Data Engineer Certification</a></div>
+          <div class="resource-card__desc">Official certification page. Register for the exam, see requirements, and access the free practice exam.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Registration</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--official">Official</span>
+          <div class="resource-card__title"><a href="https://cloud.google.com/learn/certification/guides/data-engineer" target="_blank">Official Exam Guide</a></div>
+          <div class="resource-card__desc">Complete exam guide with all domains, topics, and product names used on the exam. Read this first.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Week 1</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--free">Free</span>
+          <div class="resource-card__title"><a href="https://www.cloudskillsboost.google/paths/16" target="_blank">Google Cloud Skills Boost — Data Engineer Path</a></div>
+          <div class="resource-card__desc">Official learning path with hands-on labs, skill badges, and courses. Covers all exam domains with real GCP console exercises.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Hands-on Labs</span><span class="resource-card__badge">All Weeks</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Course</span>
+          <div class="resource-card__title"><a href="https://www.coursera.org/professional-certificates/gcp-data-engineering" target="_blank">Coursera: Google Cloud Data Engineer Certificate</a></div>
+          <div class="resource-card__desc">Official Google Cloud professional certificate on Coursera. Covers BigQuery, Dataflow, Bigtable, ML, with hands-on Qwiklabs projects.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free Audit</span><span class="resource-card__badge">All Weeks</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Practice Exams -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">02</span>
+        <span class="category__title">Practice Exams</span>
+        <span class="category__tag">Week 1 &amp; 5</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--free">Free</span>
+          <div class="resource-card__title"><a href="https://open-exam-prep.com/practice/gcp-data-engineer" target="_blank">OpenExamPrep — 216+ Free Questions</a></div>
+          <div class="resource-card__desc">216+ free practice questions with detailed explanations. No signup required. Great for your Week 1 diagnostic.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">216+ Questions</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--free">Free</span>
+          <div class="resource-card__title"><a href="https://certificationpractice.com/practice-exams/google-cloud-professional-data-engineer" target="_blank">CertificationPractice — 360 Questions</a></div>
+          <div class="resource-card__desc">6 unique practice exams with 360 total questions. Realistic format with comprehensive coverage of all domains.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">6 Exams</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--practice">Paid</span>
+          <div class="resource-card__title"><a href="https://whizlabs.com/google-cloud-certified-professional-data-engineer/practice-tests" target="_blank">Whizlabs — Practice Tests</a></div>
+          <div class="resource-card__desc">Popular paid practice tests with detailed explanations. Recommended for your Week 5 second practice exam.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Paid</span><span class="resource-card__badge">High Quality</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--practice">Paid</span>
+          <div class="resource-card__title"><a href="https://www.udemy.com/course/gcp-de-professional-data-engineer-practice-exam/" target="_blank">Udemy — Practice Tests 2026</a></div>
+          <div class="resource-card__desc">Updated 2026 practice tests with real-style questions. Often on sale for ~$15. Good alternative for Week 5.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Paid</span><span class="resource-card__badge">2026 Updated</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Video Courses -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">03</span>
+        <span class="category__title">Video Courses (YouTube — Free)</span>
+        <span class="category__tag">All Weeks</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=7gBJpFfkVdY" target="_blank">GCP Professional Data Engineer — Complete Guide</a></div>
+          <div class="resource-card__desc">Comprehensive single video covering all exam domains. Good for an initial overview before diving into specifics.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Overview</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=TB92cDzhJQE" target="_blank">2.5 Hour Exam Preparation Video</a></div>
+          <div class="resource-card__desc">Complete exam preparation in one session. Covers key concepts, exam tips, and practice scenarios.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">2.5 Hours</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/playlist?list=PLLrA_pU9-Gz1TbaEIlUVfAqZ853LmDPib" target="_blank">Data Engineer Certification Course (Playlist)</a></div>
+          <div class="resource-card__desc">Multi-video playlist covering each exam topic in detail. Watch alongside your weekly study schedule.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Playlist</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=seRxcAS8NoE" target="_blank">Cloud SQL, Spanner, Firestore & Bigtable Deep Dive</a></div>
+          <div class="resource-card__desc">Deep comparison of GCP database services. Perfect for Week 2 storage study — covers when to use each.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Week 2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Storage & Databases -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">04</span>
+        <span class="category__title">Storage & Databases (Official Docs)</span>
+        <span class="category__tag">Week 2</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/bigtable/docs" target="_blank">Bigtable Documentation</a></div>
+          <div class="resource-card__desc">Official docs covering architecture, schema design, row key best practices, performance tuning, and SQL support.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Schema Design</span><span class="resource-card__badge">Row Keys</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/spanner/docs" target="_blank">Spanner Documentation</a></div>
+          <div class="resource-card__desc">Official docs with tutorials, schema design best practices, interleaved tables, and Python/Java quickstarts.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">TrueTime</span><span class="resource-card__badge">Codelabs</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/spanner/docs/labs" target="_blank">Spanner Codelabs</a></div>
+          <div class="resource-card__desc">Hands-on code-first labs. Create a database, set up Graph database, query with GQL. Best way to learn Spanner.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Hands-on</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://cloud.google.com/resources/spanner" target="_blank">Spanner Resources Hub</a></div>
+          <div class="resource-card__desc">Whitepapers, solutions, and deep-dive articles on Spanner architecture and use cases.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Architecture</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Processing & Dataflow -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">05</span>
+        <span class="category__title">Dataflow & Apache Beam</span>
+        <span class="category__tag">Week 3</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--free">Free</span>
+          <div class="resource-card__title"><a href="https://learnbeam.dev/" target="_blank">LearnBeam.dev</a></div>
+          <div class="resource-card__desc">Comprehensive free tutorials for Apache Beam. Covers PCollections, transforms, windowing, triggers — all the exam topics.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Tutorials</span><span class="resource-card__badge">Beam SDK</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Udemy</span>
+          <div class="resource-card__title"><a href="https://www.udemy.com/course/master-google-cloud-dataflow-and-apache-beam/" target="_blank">Master Google Cloud Dataflow & Apache Beam</a></div>
+          <div class="resource-card__desc">Advanced course with practice sessions for every concept. Covers templates, streaming engine, autoscaling.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Paid</span><span class="resource-card__badge">Advanced</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Udemy</span>
+          <div class="resource-card__title"><a href="https://www.udemy.com/course/google-dataflow-with-apache-beam-from-beginner-to-pro-level/" target="_blank">Dataflow with Apache Beam — Beginner to Pro</a></div>
+          <div class="resource-card__desc">From zero to advanced with hands-on labs, real-world case studies, and practical assignments.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Paid</span><span class="resource-card__badge">Beginner to Pro</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Udemy</span>
+          <div class="resource-card__title"><a href="https://www.udemy.com/course/apache-beam/" target="_blank">Apache Beam | Google Dataflow (Python)</a></div>
+          <div class="resource-card__desc">Hands-on course focused on Python SDK. Good for your daily work with Beam.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Paid</span><span class="resource-card__badge">Python</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. ML on GCP -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">06</span>
+        <span class="category__title">ML on GCP (BigQuery ML & Vertex AI)</span>
+        <span class="category__tag">Week 3</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/vertex-ai/docs/beginner/bqml" target="_blank">BigQuery ML for Beginners</a></div>
+          <div class="resource-card__desc">Official getting started guide for BigQuery ML. Learn CREATE MODEL, supported algorithms, and predictions with SQL.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Beginner</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=AVwwkqLOito" target="_blank">Simplify AI Models with Vertex AI and BigQuery ML</a></div>
+          <div class="resource-card__desc">Google Cloud video explaining how BigQuery ML and Vertex AI work together. Good overview before diving into docs.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Overview</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=wKTHUcGDLJE" target="_blank">Build Real-Time AI/ML APIs Using Only SQL</a></div>
+          <div class="resource-card__desc">Build and deploy ML APIs using BigQuery ML and Vertex AI with just SQL. Very practical, exam-relevant.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Hands-on</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://cloud.google.com/blog/products/ai-machine-learning/build-automate-and-monitor-bigquery-ml-models-vertex-ai-mlops-capabilities/" target="_blank">BigQuery ML + Vertex AI MLOps</a></div>
+          <div class="resource-card__desc">Official blog on building, automating, and monitoring BigQuery ML models with Vertex AI MLOps capabilities.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">MLOps</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Security & Governance -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">07</span>
+        <span class="category__title">Security & Governance</span>
+        <span class="category__tag">Week 4</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/vpc-service-controls/docs/overview" target="_blank">VPC Service Controls — Overview</a></div>
+          <div class="resource-card__desc">Official documentation on creating security perimeters, access levels, ingress/egress rules, and bridges.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Security</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--video">YouTube</span>
+          <div class="resource-card__title"><a href="https://www.youtube.com/watch?v=B99EriPZNbs" target="_blank">VPC Service Controls Explained</a></div>
+          <div class="resource-card__desc">Clear video explanation of VPC Service Controls — GCP's hidden security feature. Perfect for visual learners.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Video</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/sensitive-data-protection/docs/securing-dlp" target="_blank">Securing Sensitive Data (DLP)</a></div>
+          <div class="resource-card__desc">Official guide on DLP inspection, de-identification, tokenization, and format-preserving encryption.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">DLP</span><span class="resource-card__badge">PII</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Docs</span>
+          <div class="resource-card__title"><a href="https://docs.cloud.google.com/iam/docs/secure-iam-vpc-sc" target="_blank">Secure IAM with VPC Service Controls</a></div>
+          <div class="resource-card__desc">How IAM and VPC-SC work together. Understand the difference — IAM controls WHO, VPC-SC controls WHERE.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">IAM + VPC-SC</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Coursera Specialization -->
+    <div class="category">
+      <div class="category__header">
+        <span class="category__number">08</span>
+        <span class="category__title">Full Courses (Structured Learning)</span>
+        <span class="category__tag">Optional</span>
+      </div>
+      <div class="resources-grid">
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Coursera</span>
+          <div class="resource-card__title"><a href="https://www.coursera.org/learn/preparing-cloud-professional-data-engineer-exam" target="_blank">Preparing for Your Professional Data Engineer Journey</a></div>
+          <div class="resource-card__desc">Final exam prep course on Coursera. Reviews all domains, provides sample questions, and exam strategy. Take this in Week 5.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free Audit</span><span class="resource-card__badge">Week 5</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Coursera</span>
+          <div class="resource-card__title"><a href="https://www.coursera.org/specializations/gcp-data-machine-learning" target="_blank">Data Engineering, Big Data, and ML on GCP</a></div>
+          <div class="resource-card__desc">Google Cloud specialization covering BigQuery, Dataflow, TensorFlow, and ML pipelines. Broader than exam prep.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free Audit</span><span class="resource-card__badge">Deep Dive</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--course">Coursera</span>
+          <div class="resource-card__title"><a href="https://www.coursera.org/learn/preparing-cloud-professional-data-engineer-exam-br" target="_blank">Preparacao para o Exame (Portugues)</a></div>
+          <div class="resource-card__desc">Mesmo curso de preparacao em portugues brasileiro. Util se preferir estudar no seu idioma nativo.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free Audit</span><span class="resource-card__badge">Portugues</span></div>
+        </div>
+        <div class="resource-card">
+          <span class="resource-card__type resource-card__type--docs">Blog</span>
+          <div class="resource-card__title"><a href="https://cloud.google.com/blog/products/identity-security/best-practices-for-secure-data-warehouse-in-google-cloud" target="_blank">Best Practices for Secure Data Warehouse</a></div>
+          <div class="resource-card__desc">Google Cloud blog on securing data warehouses. Covers encryption, access control, audit logging — exam gold.</div>
+          <div class="resource-card__meta"><span class="resource-card__badge">Free</span><span class="resource-card__badge">Architecture</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>Resources collected 2026-09-16 &middot; <a href="study.html" style="color: var(--accent-primary);">Back to Study Hub</a></p>
+  </footer>
+
+</body>
+</html>

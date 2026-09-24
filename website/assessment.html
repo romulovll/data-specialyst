@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GCP PDE — Self Assessment Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --accent-primary: #06b6d4;
+      --accent-secondary: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #06b6d4, #3b82f6);
+      --status-complete: #10b981;
+      --status-in-progress: #f59e0b;
+      --status-planned: #6b7280;
+      --status-gap: #ef4444;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-subtle: #1f2937;
+      --font-heading: 'Inter', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --max-width: 1100px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    .header {
+      background: rgba(10, 14, 23, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header__inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .header__back {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-primary);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .header__back:hover { color: var(--accent-secondary); }
+
+    /* Container */
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Summary Cards */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .summary-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .summary-card__number {
+      font-family: var(--font-mono);
+      font-size: 2.5rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-card__number--confident { color: var(--status-complete); }
+    .summary-card__number--gap { color: var(--status-gap); }
+    .summary-card__number--total {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .summary-card__number--percent { color: var(--status-in-progress); }
+
+    .summary-card__label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: var(--font-mono);
+    }
+
+    /* Domain Breakdown */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .domains {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .domain-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    .domain-bar:hover { border-color: var(--accent-primary); }
+
+    .domain-bar__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .domain-bar__name {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .domain-bar__meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .domain-bar__weight {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-primary);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .domain-bar__score {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .domain-bar__score strong {
+      color: var(--status-complete);
+    }
+
+    .domain-bar__track {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .domain-bar__fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .domain-bar__fill--confident {
+      background: var(--status-complete);
+      z-index: 2;
+    }
+
+    .domain-bar__fill--gap {
+      background: var(--status-gap);
+      opacity: 0.2;
+      width: 100% !important;
+      z-index: 1;
+    }
+
+    .domain-bar__arrow {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: transform 0.3s;
+    }
+
+    .domain-bar.open .domain-bar__arrow {
+      transform: rotate(180deg);
+    }
+
+    /* Topic list inside domain */
+    .domain-topics {
+      display: none;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .domain-bar.open .domain-topics {
+      display: block;
+    }
+
+    .topic {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.5);
+    }
+
+    .topic:last-child { border-bottom: none; }
+
+    .topic__status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .topic__status--confident { background: var(--status-complete); }
+    .topic__status--gap { background: var(--status-gap); opacity: 0.5; }
+
+    .topic__name {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .topic--confident .topic__name {
+      color: var(--text-primary);
+    }
+
+    .topic__badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .topic__badge--confident {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--status-complete);
+    }
+
+    .topic__badge--gap {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--status-gap);
+    }
+
+    /* Priority List */
+    .priority-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .priority-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+
+    .priority-item__rank {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      width: 40px;
+      text-align: center;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .priority-item__info {
+      flex: 1;
+    }
+
+    .priority-item__name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .priority-item__detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .priority-item__urgency {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .priority-item__urgency--critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--status-gap);
+    }
+
+    .priority-item__urgency--high {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--status-in-progress);
+    }
+
+    /* Recommendation */
+    .recommendation {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .recommendation__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--accent-primary);
+    }
+
+    .recommendation p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+      line-height: 1.7;
+    }
+
+    .recommendation strong {
+      color: var(--text-primary);
+    }
+
+    /* Study link */
+    .study-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .study-link {
+      display: block;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.3s;
+    }
+
+    .study-link:hover {
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+    }
+
+    .study-link__icon {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 2rem;
+      text-align: center;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 2rem;
+    }
+
+    .footer p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .study-links { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .summary { grid-template-columns: 1fr; }
+      .container { padding: 1rem; }
+    }
+
+    /* Animate on load */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate {
+      animation: fadeUp 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .animate:nth-child(1) { animation-delay: 0.1s; }
+    .animate:nth-child(2) { animation-delay: 0.2s; }
+    .animate:nth-child(3) { animation-delay: 0.3s; }
+    .animate:nth-child(4) { animation-delay: 0.4s; }
+    .animate:nth-child(5) { animation-delay: 0.5s; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header__inner">
+      <span class="header__title">GCP Professional Data Engineer — Assessment Dashboard</span>
+      <a href="index.html" class="header__back">&larr; Back to Portfolio</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Summary -->
+    <div class="summary">
+      <div class="summary-card animate">
+        <span class="summary-card__number summary-card__number--total">76</span>
+        <span class="summary-card__label">Total Topics</span>
+      </div>
+      <div class="summary-card animate">
+        <span class="summary-card__number summary-card__number--confident">4</span>
+        <span class="summary-card__label">Confident</span>
+      </div>
+      <div class="summary-card animate">
+        <span class="summary-card__number summary-card__number--gap">72</span>
+        <span class="summary-card__label">To Study</span>
+      </div>
+      <div class="summary-card animate">
+        <span class="summary-card__number summary-card__number--percent">5%</span>
+        <span class="summary-card__label">Exam Ready</span>
+      </div>
+    </div>
+
+    <!-- Domain Breakdown -->
+    <h2 class="section-title">Domain Breakdown</h2>
+    <div class="domains" id="domains"></div>
+
+    <!-- Priority Study Order -->
+    <h2 class="section-title">Priority Study Order</h2>
+    <div class="priority-list">
+      <div class="priority-item animate">
+        <span class="priority-item__rank">1</span>
+        <div class="priority-item__info">
+          <div class="priority-item__name">Ingesting and Processing Data</div>
+          <div class="priority-item__detail">Domain 2 &middot; 25% of exam &middot; 1/20 topics confident</div>
+        </div>
+        <span class="priority-item__urgency priority-item__urgency--critical">Critical</span>
+      </div>
+      <div class="priority-item animate">
+        <span class="priority-item__rank">2</span>
+        <div class="priority-item__info">
+          <div class="priority-item__name">Designing Data Processing Systems</div>
+          <div class="priority-item__detail">Domain 1 &middot; 22% of exam &middot; 3/18 topics confident</div>
+        </div>
+        <span class="priority-item__urgency priority-item__urgency--critical">Critical</span>
+      </div>
+      <div class="priority-item animate">
+        <span class="priority-item__rank">3</span>
+        <div class="priority-item__info">
+          <div class="priority-item__name">Storing Data</div>
+          <div class="priority-item__detail">Domain 3 &middot; 20% of exam &middot; 0/13 topics confident</div>
+        </div>
+        <span class="priority-item__urgency priority-item__urgency--critical">Critical</span>
+      </div>
+      <div class="priority-item animate">
+        <span class="priority-item__rank">4</span>
+        <div class="priority-item__info">
+          <div class="priority-item__name">Maintaining and Automating Workloads</div>
+          <div class="priority-item__detail">Domain 5 &middot; 18% of exam &middot; 0/12 topics confident</div>
+        </div>
+        <span class="priority-item__urgency priority-item__urgency--high">High</span>
+      </div>
+      <div class="priority-item animate">
+        <span class="priority-item__rank">5</span>
+        <div class="priority-item__info">
+          <div class="priority-item__name">Preparing and Using Data for Analysis</div>
+          <div class="priority-item__detail">Domain 4 &middot; 15% of exam &middot; 0/13 topics confident</div>
+        </div>
+        <span class="priority-item__urgency priority-item__urgency--high">High</span>
+      </div>
+    </div>
+
+    <!-- Recommendation -->
+    <h2 class="section-title">Recommendation</h2>
+    <div class="recommendation">
+      <div class="recommendation__title">Your study plan needs adjustment</div>
+      <p>
+        With <strong>4 out of 76 topics</strong> at exam-ready confidence, the original 6-week plan
+        (built for ~70% baseline) needs to be more intensive. You have strong hands-on experience
+        but need to build <strong>exam-level theoretical knowledge</strong> across all domains.
+      </p>
+      <p>
+        <strong>Option A:</strong> Keep 6 weeks, increase to 2-3 hours/day (~100 total hours).<br>
+        <strong>Option B:</strong> Extend to 10 weeks at 1-2 hours/day (more relaxed, same coverage).
+      </p>
+      <p>
+        <strong>Start with the cheatsheets</strong> — they already contain most of what the exam tests.
+        Then take a practice exam to validate your progress.
+      </p>
+
+      <div class="study-links">
+        <a href="study.html" class="study-link">
+          <span class="study-link__icon">&#9776;</span>
+          Services Comparison<br><small>Start studying</small>
+        </a>
+        <a href="study.html" class="study-link">
+          <span class="study-link__icon">&#9881;</span>
+          Dataflow Patterns<br><small>Start studying</small>
+        </a>
+        <a href="study.html" class="study-link">
+          <span class="study-link__icon">&#9888;</span>
+          Security & Governance<br><small>Start studying</small>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>GCP Professional Data Engineer — Study Dashboard &middot; Assessment date: 2026-09-16</p>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var domains = [
+        {
+          name: 'Designing Data Processing Systems',
+          domain: 1,
+          weight: 22,
+          topics: [
+            { name: 'Designing batch vs streaming pipelines', confident: true },
+            { name: 'Choosing between Dataflow, Dataproc, and Data Fusion', confident: false },
+            { name: 'Designing for exactly-once vs at-least-once processing', confident: false },
+            { name: 'Windowing strategies (fixed, sliding, session, global)', confident: false },
+            { name: 'Watermarks and late data handling', confident: false },
+            { name: 'Pipeline orchestration with Composer/Airflow', confident: true },
+            { name: 'Choosing between BigQuery, Bigtable, Spanner, Cloud SQL', confident: true },
+            { name: 'BigQuery partitioning strategies (time, range, ingestion)', confident: false },
+            { name: 'BigQuery clustering and when to use it', confident: false },
+            { name: 'Bigtable schema design (row key, column families)', confident: false },
+            { name: 'Spanner schema design and interleaved tables', confident: false },
+            { name: 'Cloud Storage classes (Standard, Nearline, Coldline, Archive)', confident: false },
+            { name: 'Data lake vs data warehouse architecture', confident: false },
+            { name: 'Designing for scalability and high availability', confident: false },
+            { name: 'Data consistency vs availability trade-offs', confident: false },
+            { name: 'Multi-region data architecture', confident: false },
+            { name: 'Hybrid and multi-cloud data architectures', confident: false },
+            { name: 'Designing for cost optimization', confident: false },
+          ]
+        },
+        {
+          name: 'Ingesting and Processing Data',
+          domain: 2,
+          weight: 25,
+          topics: [
+            { name: 'Pub/Sub: topics, subscriptions, push vs pull', confident: true },
+            { name: 'Pub/Sub: ordering, deduplication, dead-letter topics', confident: false },
+            { name: 'Pub/Sub Lite vs Pub/Sub: when to use each', confident: false },
+            { name: 'Streaming ingestion patterns', confident: false },
+            { name: 'Batch ingestion patterns (Transfer Service, gsutil)', confident: false },
+            { name: 'Change Data Capture (CDC) patterns', confident: false },
+            { name: 'IoT Core and IoT data ingestion', confident: false },
+            { name: 'Apache Beam programming model (PCollections, transforms)', confident: false },
+            { name: 'ParDo, GroupByKey, CoGroupByKey, Combine', confident: false },
+            { name: 'Side inputs and side outputs', confident: false },
+            { name: 'Dataflow templates vs Flex Templates', confident: false },
+            { name: 'Dataflow autoscaling and worker configuration', confident: false },
+            { name: 'Dataflow streaming vs batch execution', confident: false },
+            { name: 'Dataflow monitoring and troubleshooting', confident: false },
+            { name: 'Dataflow shuffle service and streaming engine', confident: false },
+            { name: 'Dataproc: Spark and Hadoop on GCP', confident: false },
+            { name: 'Dataproc: cluster config, autoscaling, preemptible VMs', confident: false },
+            { name: 'Dataproc Serverless vs standard clusters', confident: false },
+            { name: 'Data Fusion: visual ETL pipelines', confident: false },
+            { name: 'BigQuery: loading data (batch, streaming, DML, Storage Write API)', confident: false },
+          ]
+        },
+        {
+          name: 'Storing Data',
+          domain: 3,
+          weight: 20,
+          topics: [
+            { name: 'Cloud SQL: configuration, HA, read replicas', confident: false },
+            { name: 'Cloud Spanner: architecture, TrueTime, global distribution', confident: false },
+            { name: 'AlloyDB: when to use vs Cloud SQL', confident: false },
+            { name: 'Database migration strategies (DMS)', confident: false },
+            { name: 'Bigtable: architecture (tablets, nodes, SSDs vs HDDs)', confident: false },
+            { name: 'Bigtable: performance optimization and monitoring', confident: false },
+            { name: 'Firestore/Datastore: document model, when to use', confident: false },
+            { name: 'Memorystore (Redis/Memcached): caching patterns', confident: false },
+            { name: 'BigQuery: storage architecture (Capacitor, Colossus)', confident: false },
+            { name: 'BigQuery: external tables, federated queries', confident: false },
+            { name: 'Cloud Storage: lifecycle policies, retention, versioning', confident: false },
+            { name: 'Cloud Storage: signed URLs, ACLs vs IAM', confident: false },
+            { name: 'Transfer Service and Transfer Appliance', confident: false },
+          ]
+        },
+        {
+          name: 'Preparing and Using Data for Analysis',
+          domain: 4,
+          weight: 15,
+          topics: [
+            { name: 'Dataprep (Trifacta): interactive data cleaning', confident: false },
+            { name: 'BigQuery: UDFs (SQL and JavaScript)', confident: false },
+            { name: 'BigQuery: scripting and stored procedures', confident: false },
+            { name: 'Data quality validation strategies', confident: false },
+            { name: 'BigQuery ML: CREATE MODEL, supported algorithms', confident: false },
+            { name: 'BigQuery ML: TRANSFORM, EVALUATE, PREDICT', confident: false },
+            { name: 'Vertex AI: AutoML vs custom training', confident: false },
+            { name: 'Vertex AI: Feature Store', confident: false },
+            { name: 'Vertex AI: Model monitoring and drift detection', confident: false },
+            { name: 'TensorFlow/PyTorch on GCP (high-level concepts)', confident: false },
+            { name: 'Looker and Looker Studio (Data Studio)', confident: false },
+            { name: 'BigQuery BI Engine', confident: false },
+            { name: 'Connected Sheets (BigQuery + Google Sheets)', confident: false },
+          ]
+        },
+        {
+          name: 'Maintaining and Automating Data Workloads',
+          domain: 5,
+          weight: 18,
+          topics: [
+            { name: 'Cloud Monitoring: metrics, alerts, dashboards', confident: false },
+            { name: 'Cloud Logging: log sinks, log-based metrics', confident: false },
+            { name: 'Data pipeline SLAs and error handling strategies', confident: false },
+            { name: 'IAM: roles, service accounts, least privilege', confident: false },
+            { name: 'Encryption: CMEK, CSEK, default encryption', confident: false },
+            { name: 'VPC Service Controls for data services', confident: false },
+            { name: 'Data Loss Prevention (DLP): inspection, de-identification', confident: false },
+            { name: 'Terraform for GCP data infrastructure', confident: false },
+            { name: 'CI/CD for data pipelines (Cloud Build)', confident: false },
+            { name: 'Composer/Airflow: DAG design, scheduling, sensors', confident: false },
+            { name: 'Data Catalog / Dataplex: metadata, data lineage, quality', confident: false },
+            { name: 'BigQuery: query optimization (slots, BI Engine, materialized views)', confident: false },
+          ]
+        }
+      ];
+
+      var container = document.getElementById('domains');
+
+      domains.forEach(function (d) {
+        var confidentCount = d.topics.filter(function (t) { return t.confident; }).length;
+        var totalCount = d.topics.length;
+        var pct = Math.round((confidentCount / totalCount) * 100);
+
+        var div = document.createElement('div');
+        div.className = 'domain-bar animate';
+
+        var topicsHtml = d.topics.map(function (t) {
+          var cls = t.confident ? 'topic topic--confident' : 'topic';
+          var dotCls = t.confident ? 'topic__status topic__status--confident' : 'topic__status topic__status--gap';
+          var badgeCls = t.confident ? 'topic__badge topic__badge--confident' : 'topic__badge topic__badge--gap';
+          var badgeText = t.confident ? 'Confident' : 'Study';
+          return '<div class="' + cls + '">' +
+            '<div class="' + dotCls + '"></div>' +
+            '<span class="topic__name">' + t.name + '</span>' +
+            '<span class="' + badgeCls + '">' + badgeText + '</span>' +
+            '</div>';
+        }).join('');
+
+        div.innerHTML =
+          '<div class="domain-bar__header">' +
+            '<span class="domain-bar__name">Domain ' + d.domain + ': ' + d.name + '</span>' +
+            '<div class="domain-bar__meta">' +
+              '<span class="domain-bar__weight">' + d.weight + '% of exam</span>' +
+              '<span class="domain-bar__score"><strong>' + confidentCount + '</strong> / ' + totalCount + ' topics</span>' +
+              '<span class="domain-bar__arrow">&#9660;</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="domain-bar__track">' +
+            '<div class="domain-bar__fill domain-bar__fill--gap"></div>' +
+            '<div class="domain-bar__fill domain-bar__fill--confident" style="width: ' + pct + '%;"></div>' +
+          '</div>' +
+          '<div class="domain-topics">' + topicsHtml + '</div>';
+
+        div.addEventListener('click', function () {
+          this.classList.toggle('open');
+        });
+
+        container.appendChild(div);
+      });
+    })();
+  </script>
+</body>
+</html>
