@@ -932,7 +932,7 @@
     // ========================================
     var STORAGE_KEY = 'gcp-pde-study-progress';
     var checkedItems = {};
-    var API_URL = 'http://localhost:8000/api';
+    var API_URL = 'https://studyhub-api-881000472963.southamerica-east1.run.app/api';
 
     function loadProgress() {
       return fetch(API_URL + '/progress/' + STORAGE_KEY).then(function(r) { return r.json(); }).then(function(d) {
