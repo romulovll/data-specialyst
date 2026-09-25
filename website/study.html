@@ -933,9 +933,10 @@
     var STORAGE_KEY = 'gcp-pde-study-progress';
     var checkedItems = {};
     var API_URL = 'https://studyhub-api-881000472963.southamerica-east1.run.app/api';
+    var API_KEY = '7oizTMy1dMDTMHnDau0KVXgpVOnt1BF_fuiLcx6LEA4';
 
     function loadProgress() {
-      return fetch(API_URL + '/progress/' + STORAGE_KEY).then(function(r) { return r.json(); }).then(function(d) {
+      return fetch(API_URL + '/progress/' + STORAGE_KEY, { headers: { 'X-API-Key': API_KEY } }).then(function(r) { return r.json(); }).then(function(d) {
         checkedItems = d.progress || {};
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
       }).catch(function() {
@@ -945,7 +946,7 @@
 
     function saveProgress() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
-      fetch(API_URL + '/progress/' + STORAGE_KEY, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ progress: checkedItems }) }).catch(function() {});
+      fetch(API_URL + '/progress/' + STORAGE_KEY, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY }, body: JSON.stringify({ progress: checkedItems }) }).catch(function() {});
     }
 
     function getCheckedCount() {

@@ -4,7 +4,7 @@ from datetime import datetime
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -21,6 +21,13 @@ DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://studyhub:studyhub_local@localhost:5432/studyhub",
 )
+
+API_KEY = os.environ.get("API_KEY", "")
+
+
+def verify_key(x_api_key: str = Header(None)):
+    if API_KEY and x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 def get_conn():
@@ -42,7 +49,8 @@ def health():
 
 
 @app.get("/api/progress/{hub_name}")
-def get_progress(hub_name: str):
+def get_progress(hub_name: str, x_api_key: str = Header(None)):
+    verify_key(x_api_key)
     conn = get_conn()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -59,7 +67,8 @@ def get_progress(hub_name: str):
 
 
 @app.put("/api/progress/{hub_name}")
-def save_progress(hub_name: str, payload: ProgressPayload):
+def save_progress(hub_name: str, payload: ProgressPayload, x_api_key: str = Header(None)):
+    verify_key(x_api_key)
     conn = get_conn()
     try:
         with conn.cursor() as cur:
