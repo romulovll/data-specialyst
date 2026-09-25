@@ -86,7 +86,7 @@
       <div class="sidebar__section-title">Resources</div>
       <button class="sidebar__link" data-section="resources"><span class="sidebar__link-dot"></span>Practice Exams & Courses</button>
     </nav>
-    <div class="sidebar__footer"><a href="study.html">GCP PDE Study</a> &middot; <a href="index.html">Portfolio</a></div>
+    <div class="sidebar__footer"><a href="study.html">GCP PDE Study</a> &middot; <a href="index.html">Portfolio</a><br><span id="authStatus"></span></div>
   </aside>
   <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
   <div class="main">
@@ -101,6 +101,7 @@
     </div>
   </div>
 </div>
+<script src="js/auth.js"></script>
 <script>
 (function(){
 'use strict';
@@ -162,17 +163,8 @@ var data={
 };
 
 var STORAGE_KEY='gcp-pca-study-progress';var checkedItems={};
-var API_URL='https://studyhub-api-881000472963.southamerica-east1.run.app/api';
-var API_KEY='7oizTMy1dMDTMHnDau0KVXgpVOnt1BF_fuiLcx6LEA4';
-function loadProgress(){
-  return fetch(API_URL+'/progress/'+STORAGE_KEY,{headers:{'X-API-Key':API_KEY}}).then(function(r){return r.json();}).then(function(d){
-    checkedItems=d.progress||{};try{localStorage.setItem(STORAGE_KEY,JSON.stringify(checkedItems));}catch(e){}
-  }).catch(function(){try{var s=localStorage.getItem(STORAGE_KEY);if(s)checkedItems=JSON.parse(s);}catch(e){}});
-}
-function saveProgress(){
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(checkedItems));}catch(e){}
-  fetch(API_URL+'/progress/'+STORAGE_KEY,{method:'PUT',headers:{'Content-Type':'application/json','X-API-Key':API_KEY},body:JSON.stringify({progress:checkedItems})}).catch(function(){});
-}
+function loadProgress(){ return loadProgressFromAPI(STORAGE_KEY); }
+function saveProgress(){ saveProgressToAPI(STORAGE_KEY); }
 function getCheckedCount(){var c=0;for(var k in checkedItems)if(checkedItems[k])c++;return c;}
 function getTotalCount(){var t=0;for(var s in data)t+=data[s].cards.length;return t;}
 var contentEl=document.getElementById('content'),titleEl=document.getElementById('sectionTitle'),progressText=document.getElementById('progressText'),progressFill=document.getElementById('progressFill');

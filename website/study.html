@@ -548,6 +548,7 @@
         <a href="assessment.html">Assessment</a>
         &nbsp;&middot;&nbsp;
         <a href="index.html">Portfolio</a>
+        <br><span id="authStatus"></span>
       </div>
     </aside>
 
@@ -568,6 +569,7 @@
     </div>
   </div>
 
+  <script src="js/auth.js"></script>
   <script>
   (function () {
     'use strict';
@@ -932,22 +934,8 @@
     // ========================================
     var STORAGE_KEY = 'gcp-pde-study-progress';
     var checkedItems = {};
-    var API_URL = 'https://studyhub-api-881000472963.southamerica-east1.run.app/api';
-    var API_KEY = '7oizTMy1dMDTMHnDau0KVXgpVOnt1BF_fuiLcx6LEA4';
-
-    function loadProgress() {
-      return fetch(API_URL + '/progress/' + STORAGE_KEY, { headers: { 'X-API-Key': API_KEY } }).then(function(r) { return r.json(); }).then(function(d) {
-        checkedItems = d.progress || {};
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
-      }).catch(function() {
-        try { var s = localStorage.getItem(STORAGE_KEY); if (s) checkedItems = JSON.parse(s); } catch(e) {}
-      });
-    }
-
-    function saveProgress() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedItems)); } catch(e) {}
-      fetch(API_URL + '/progress/' + STORAGE_KEY, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY }, body: JSON.stringify({ progress: checkedItems }) }).catch(function() {});
-    }
+    function loadProgress() { return loadProgressFromAPI(STORAGE_KEY); }
+    function saveProgress() { saveProgressToAPI(STORAGE_KEY); }
 
     function getCheckedCount() {
       var count = 0;
