@@ -65,9 +65,11 @@ Data Architect and Senior Data Engineer with 7+ years of experience designing an
 
 **MBA, Full Cycle Architecture & Data Architecture** — Instituto Faculeste, Brazil (2024)
 
-**MBA, Information Technology Management** — Universidade de São Paulo (USP), Brazil (2021)
+**XBA, Xponential Business Administration** — StartSe University, Brazil (2022)
 
-**M.Sc., Information Systems** — Instituto Federal de São Paulo (IFSP), Brazil (2020)
+**MBA, Information Technology Management** — Instituto Faculeste, Brazil (2021)
+
+**M.Sc., Information Systems** — Universidade de São Paulo (USP), Brazil (2020)
 
 **B.Sc., Systems Analysis & Development** — Instituto Federal de São Paulo (IFSP), Brazil (2016)
 
