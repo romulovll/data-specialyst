@@ -79,21 +79,39 @@ This is the evolution of BigQuery ML. The exam already tests when to use BigQuer
 
 ---
 
-## Try It Yourself (5 minutes)
+## Try It Yourself (Tested & Verified)
+
+### Prerequisites
+
+Before running AI functions you need:
+1. A GCP project with **billing enabled**
+2. Enable the **Agent Platform API**:
+   ```bash
+   gcloud services enable aiplatform.googleapis.com --project=YOUR_PROJECT
+   ```
+3. Run the query from **your project** (not from bigquery-public-data directly)
+
+### The Query
 
 ```sql
--- Tested and working — run this in BigQuery console
+-- Tested and working on BigQuery — Oct 2026
 
 SELECT
   title,
   AI.GENERATE(
-    prompt => CONCAT('Classify this as tech, politics, sports, or business. Return only the category: ', title),
+    prompt => CONCAT('Classify as tech, politics, sports, or business: ', title),
     endpoint => 'gemini-3.5-flash'
   ).result AS category
 FROM `bigquery-public-data.hacker_news.full`
 WHERE score > 100
-LIMIT 10
+LIMIT 5
 ```
+
+### Key Syntax Rules
+- All parameters must be **named** (`prompt =>`, `endpoint =>`) — positional arguments don't work
+- Use `CONCAT()` to combine your prompt with column data — no multi-line strings
+- Access the result with `.result`
+- Model: `gemini-3.5-flash` (as of Oct 2026)
 
 ---
 
