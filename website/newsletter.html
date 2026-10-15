@@ -99,7 +99,7 @@
     var API='https://studyhub-api-881000472963.southamerica-east1.run.app/api';
     document.getElementById('subscribeForm').addEventListener('submit',function(e){e.preventDefault();var email=document.getElementById('subEmail').value;var btn=document.getElementById('subBtn');var msg=document.getElementById('subMsg');btn.disabled=true;btn.textContent='...';fetch(API+'/newsletter/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})}).then(function(r){return r.json()}).then(function(){msg.style.display='block';msg.style.color='#10b981';msg.textContent="You're in! We'll send new issues to "+email;document.getElementById('subEmail').value=''}).catch(function(){msg.style.display='block';msg.style.color='#ef4444';msg.textContent='Something went wrong. Try again.'}).finally(function(){btn.disabled=false;btn.textContent='Subscribe'})});
 
-    var issues=[
+    var HARDCODED_ISSUES=[
       {date:'Oct 13, 2026',title:'Composer 3 Gets Dev Mode & Hibernation',tldr:'Create Airflow 3 environments in dev mode to test DAGs before production. Hibernate them to reduce costs to near zero.',tags:['Composer','Airflow'],certs:['PDE','PCA'],body:'<h2>What Changed</h2><p>Cloud Composer (Managed Airflow) now supports <strong>development mode environments</strong> and <strong>hibernation</strong>, both GA.</p><ul><li><strong>Dev mode:</strong> Create lightweight Airflow 3 environments to test DAGs before publishing to production</li><li><strong>Hibernation:</strong> Pause dev environments to reduce costs to nearly zero when not in use</li><li><strong>Airflow 3:</strong> Generally available in Composer 3 since April 2026</li></ul><h2>Also New</h2><ul><li><strong>Orchestration Pipelines</strong> — GA since Aug 28</li><li><strong>MCP Server for Airflow</strong> — GA since Aug 25. AI agents can trigger and manage your DAGs</li></ul><div class="tip"><div class="tip__label">Exam Impact</div><p>"Reduce cost of development orchestration" → <strong>Composer dev mode + hibernation</strong>.</p></div><div class="takeaway"><p>Composer 3 + Airflow 3 + dev mode + hibernation = cheaper, faster DAG development.</p></div>'},
       {date:'Oct 9, 2026',title:'Dataflow Now Ingests CDC from Delta Lake & Iceberg',tldr:'Sync change data capture logs from Delta Lake and Iceberg tables into your Lakehouse using Dataflow batch or streaming jobs.',tags:['Dataflow','Lakehouse'],certs:['PDE'],body:'<h2>What Changed</h2><p>Dataflow now supports <strong>CDC ingestion from Delta Lake and Apache Iceberg</strong> tables into Lakehouse Iceberg tables (Preview).</p><ul><li><strong>Delta Lake:</strong> Batch jobs for CDC sync</li><li><strong>Apache Iceberg:</strong> Both batch and streaming jobs</li><li><strong>Delta Lake as source</strong> in Dataflow Job Builder (since Aug 19)</li></ul><h2>Why It Matters</h2><p>If your data is in Delta Lake (Databricks) or Iceberg, you can now sync changes directly into your GCP Lakehouse without custom ETL. Dataflow handles the CDC logic.</p><div class="takeaway"><p>Dataflow bridges Databricks/Iceberg world and GCP Lakehouse — CDC sync without custom code.</p></div>'},
       {date:'Sep 24, 2026',title:'GKE Ambient Networking: Service Mesh Without Sidecars',tldr:'GKE ambient networking provides service discovery, zero-trust, and traffic management with 10x less resource usage — no sidecar proxies.',tags:['GKE','Networking'],certs:['PCA'],body:'<h2>What Changed</h2><p>GKE <strong>ambient networking</strong> is now in Preview. It replaces sidecar-based service mesh with a simplified L4 data plane.</p><ul><li><strong>10x reduction</strong> in resource usage for mesh capabilities</li><li>Zero-trust access (mTLS by default)</li><li>Service discovery between Cloud Run and GKE pods</li><li>No Envoy sidecars needed</li></ul><h2>Before vs After</h2><table><thead><tr><th>Before (Istio/Envoy)</th><th>After (Ambient)</th></tr></thead><tbody><tr><td>Sidecar per pod</td><td>No sidecars</td></tr><tr><td>High memory/CPU overhead</td><td>10x less resources</td></tr><tr><td>Complex config</td><td>Simplified L4 mesh</td></tr></tbody></table><div class="takeaway"><p>Service mesh without the sidecar tax. 10x cheaper, zero-trust by default.</p></div>'},
@@ -118,6 +118,11 @@
       {date:'Jan 2026',title:'BigQuery AI Functions: AI.GENERATE, AI.EMBED, AI.SIMILARITY',tldr:'Run sentiment analysis, generate embeddings, compute similarity — all in SQL. One query replaces your entire Python ML pipeline.',tags:['BigQuery','AI'],certs:['PDE','PCA'],body:'<h2>New Functions (GA)</h2><ul><li><strong>AI.GENERATE:</strong> Call Gemini from SQL — text, images, video, audio input. Structured output.</li><li><strong>AI.EMBED:</strong> Generate vector embeddings in SQL</li><li><strong>AI.SIMILARITY:</strong> Compute semantic similarity between text/images</li><li><strong>AI.AGG:</strong> Semantically aggregate unstructured data</li></ul><pre>SELECT review_id,\n  AI.GENERATE(\n    prompt => CONCAT(\'Analyze sentiment and topic: \', text),\n    endpoint => \'gemini-3.5-flash\',\n    output_schema => \'STRUCT&lt;sentiment STRING, topic STRING&gt;\'\n  ).*\nFROM customer_reviews</pre><h2>Decision Tree (Updated)</h2><ul><li>TRAIN a custom model → <strong>Vertex AI</strong></li><li>TRAIN with SQL → <strong>BigQuery ML</strong></li><li>USE a pre-trained model on data → <strong>BigQuery AI functions</strong> (NEW)</li></ul><h2>Try It Yourself (Tested &amp; Verified)</h2><div class="tip"><div class="tip__label">Prerequisites</div><p>Before running AI functions, you need:<br>1. A GCP project with <strong>billing enabled</strong><br>2. Enable the <strong>Agent Platform API</strong>: <code>gcloud services enable aiplatform.googleapis.com --project=YOUR_PROJECT</code><br>3. Run the query from <strong>your project</strong> (not bigquery-public-data)</p></div><pre>-- Tested and working on BigQuery\nSELECT\n  title,\n  AI.GENERATE(\n    prompt => CONCAT(\'Classify as tech, politics, sports, or business: \', title),\n    endpoint => \'gemini-3.5-flash\'\n  ).result AS category\nFROM `bigquery-public-data.hacker_news.full`\nWHERE score > 100\nLIMIT 5</pre><div class="takeaway"><p>"Hey Gemini, analyze this column" — in SQL. No pipelines, no Python, no infra.</p></div>'}
     ];
 
+    // Merge hardcoded body into API issues (API seed has empty body)
+    var BODY_MAP={};
+    HARDCODED_ISSUES.forEach(function(i){BODY_MAP[i.title]=i.body});
+
+    function renderIssues(issues) {
     // Build unique component list
     var allTags={};
     issues.forEach(function(i){i.tags.forEach(function(t){allTags[t]=true})});
@@ -167,16 +172,27 @@
 
     // Render issues
     var container=document.getElementById('issues');
+    container.innerHTML='';
+    document.getElementById('filterRow').innerHTML='';
     issues.forEach(function(issue){
+      var body=issue.body||(BODY_MAP[issue.title]||'<p>Content coming soon.</p>');
       var tagsHtml=issue.tags.map(function(t){return '<span class="issue-card__tag">'+t+'</span>'}).join('');
-      var certsHtml=issue.certs.map(function(c){return '<span class="issue-card__tag issue-card__tag--cert">'+c+'</span>'}).join('');
+      var certsHtml=issue.certs.map(function(t){return '<span class="issue-card__tag issue-card__tag--cert">'+t+'</span>'}).join('');
       var card=document.createElement('div');
       card.className='issue-card';
       card.dataset.tags=JSON.stringify(issue.tags);
-      card.innerHTML='<div class="issue-card__header"><span class="issue-card__date">'+issue.date+'</span><div class="issue-card__info"><div class="issue-card__title">'+issue.title+'</div><div class="issue-card__tldr">'+issue.tldr+'</div><div class="issue-card__meta">'+tagsHtml+certsHtml+'</div></div><span class="issue-card__arrow">&#9660;</span></div><div class="issue-card__body">'+issue.body+'</div>';
+      card.innerHTML='<div class="issue-card__header"><span class="issue-card__date">'+issue.date+'</span><div class="issue-card__info"><div class="issue-card__title">'+issue.title+'</div><div class="issue-card__tldr">'+issue.tldr+'</div><div class="issue-card__meta">'+tagsHtml+certsHtml+'</div></div><span class="issue-card__arrow">&#9660;</span></div><div class="issue-card__body">'+body+'</div>';
       card.querySelector('.issue-card__header').addEventListener('click',function(){card.classList.toggle('open')});
       container.appendChild(card);
     });
+    } // end renderIssues
+
+    // Try API first, fall back to hardcoded
+    fetch(API+'/newsletter/issues').then(function(r){return r.json()}).then(function(data){
+      var apiIssues=data.issues||[];
+      if(apiIssues.length>0){renderIssues(apiIssues)}
+      else{renderIssues(HARDCODED_ISSUES)}
+    }).catch(function(){renderIssues(HARDCODED_ISSUES)});
   })();
   </script>
 </body>

@@ -56,6 +56,15 @@ class SubscribePayload(BaseModel):
     email: str
 
 
+class IssuePayload(BaseModel):
+    date: str
+    title: str
+    tldr: str
+    tags: list
+    certs: list
+    body: str
+
+
 @app.get("/api/health")
 def health():
     try:
@@ -144,6 +153,39 @@ def list_subscribers(authorization: str = Header(None)):
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SELECT email, subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC")
             return {"subscribers": cur.fetchall()}
+    finally:
+        conn.close()
+
+
+@app.get("/api/newsletter/issues")
+def list_issues():
+    conn = get_conn()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "SELECT id, date, title, tldr, tags, certs, body FROM newsletter_issues ORDER BY id DESC"
+            )
+            rows = cur.fetchall()
+            return {"issues": rows}
+    finally:
+        conn.close()
+
+
+@app.post("/api/newsletter/issues")
+def create_issue(payload: IssuePayload, authorization: str = Header(None)):
+    get_user_id(authorization)
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO newsletter_issues (date, title, tldr, tags, certs, body)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
+                (payload.date, payload.title, payload.tldr,
+                 payload.tags, payload.certs, payload.body),
+            )
+            issue_id = cur.fetchone()[0]
+        conn.commit()
+        return {"status": "created", "id": issue_id}
     finally:
         conn.close()
 
