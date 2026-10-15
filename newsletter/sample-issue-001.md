@@ -48,18 +48,10 @@ Imagine you have a table `customer_reviews` with columns `review_id`, `text`, an
 SELECT
   review_id,
   product_name,
-  text,
   AI.GENERATE(
-    CONCAT('Analyze this review and return: 
-      1) sentiment (positive/negative/neutral)
-      2) main topic
-      3) one-line summary in English'),
-    text,
-    output_schema => STRUCT<
-      sentiment STRING,
-      topic STRING,
-      summary STRING
-    >
+    prompt => CONCAT('Analyze this review. Return sentiment, topic, and summary: ', text),
+    endpoint => 'gemini-3.5-flash',
+    output_schema => 'STRUCT<sentiment STRING, topic STRING, summary STRING>'
   ).*
 FROM `my_project.analytics.customer_reviews`
 WHERE DATE(created_at) = CURRENT_DATE()
@@ -90,16 +82,15 @@ This is the evolution of BigQuery ML. The exam already tests when to use BigQuer
 ## Try It Yourself (5 minutes)
 
 ```sql
--- Use a public dataset to test AI.GENERATE
--- No setup needed — just run this in BigQuery console
+-- Tested and working — run this in BigQuery console
 
 SELECT
   title,
   AI.GENERATE(
-    'Classify this article title as: tech, politics, sports, or business. Return only the category.',
-    title
-  ) AS category
-FROM `bigquery-public-data.hacker_news.stories`
+    prompt => CONCAT('Classify this as tech, politics, sports, or business. Return only the category: ', title),
+    endpoint => 'gemini-3.5-flash'
+  ).result AS category
+FROM `bigquery-public-data.hacker_news.full`
 WHERE score > 100
 LIMIT 10
 ```
