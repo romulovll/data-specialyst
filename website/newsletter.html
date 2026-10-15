@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Decoded — Newsletter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root{--bg-primary:#0a0e17;--bg-secondary:#111827;--bg-tertiary:#1f2937;--accent-primary:#10b981;--accent-secondary:#34d399;--accent-gradient:linear-gradient(135deg,#10b981,#06b6d4);--text-primary:#f9fafb;--text-secondary:#9ca3af;--text-muted:#6b7280;--border-subtle:#1f2937;--font-body:'Inter',system-ui,sans-serif;--font-mono:'JetBrains Mono','Fira Code',monospace;--max-width:800px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+    .header{background:rgba(10,14,23,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle);padding:1rem 2rem;position:sticky;top:0;z-index:100}
+    .header__inner{max-width:var(--max-width);margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+    .header__title{font-size:1.1rem;font-weight:600}
+    .header__links{display:flex;gap:1rem}
+    .header__links a{font-family:var(--font-mono);font-size:.8rem;color:var(--accent-primary);text-decoration:none}
+    .header__links a:hover{color:var(--accent-secondary)}
+
+    .container{max-width:var(--max-width);margin:0 auto;padding:2rem}
+
+    .hero{text-align:center;padding:3rem 0 2rem}
+    .hero__title{font-size:2.5rem;font-weight:700;background:var(--accent-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+    .hero__subtitle{color:var(--text-secondary);font-size:1.1rem;max-width:600px;margin:0 auto 1rem}
+    .hero__tagline{font-family:var(--font-mono);font-size:.8rem;color:var(--text-muted)}
+
+    .issues{display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem}
+
+    .issue-card{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden;transition:all .3s;cursor:pointer}
+    .issue-card:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+    .issue-card__header{padding:1.5rem;cursor:pointer;display:flex;align-items:flex-start;gap:1rem}
+    .issue-card__number{font-family:var(--font-mono);font-size:2rem;font-weight:700;background:var(--accent-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;min-width:50px}
+    .issue-card__info{flex:1}
+    .issue-card__title{font-size:1.1rem;font-weight:600;margin-bottom:.35rem}
+    .issue-card__tldr{font-size:.85rem;color:var(--text-secondary);line-height:1.5}
+    .issue-card__meta{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+    .issue-card__tag{font-family:var(--font-mono);font-size:.65rem;padding:.2rem .5rem;border-radius:4px;background:var(--bg-tertiary);color:var(--text-muted);border:1px solid var(--border-subtle)}
+    .issue-card__tag--cert{background:rgba(16,185,129,.1);color:var(--accent-primary);border-color:rgba(16,185,129,.3)}
+    .issue-card__arrow{color:var(--text-muted);font-size:.8rem;transition:transform .3s;padding-top:.3rem}
+    .issue-card.open .issue-card__arrow{transform:rotate(180deg)}
+
+    .issue-card__body{display:none;padding:0 1.5rem 1.5rem;border-top:1px solid var(--border-subtle)}
+    .issue-card.open .issue-card__body{display:block}
+    .issue-card__body h2{font-size:1rem;font-weight:600;color:var(--accent-primary);margin:1.25rem 0 .5rem}
+    .issue-card__body h2:first-child{margin-top:1rem}
+    .issue-card__body h3{font-size:.9rem;font-weight:600;color:var(--accent-secondary);margin:1rem 0 .4rem}
+    .issue-card__body p{color:var(--text-secondary);font-size:.85rem;line-height:1.7;margin-bottom:.5rem}
+    .issue-card__body strong{color:var(--text-primary)}
+    .issue-card__body ul{list-style:none;margin-bottom:.75rem}
+    .issue-card__body ul li{color:var(--text-secondary);font-size:.85rem;line-height:1.6;padding-left:1rem;position:relative;margin-bottom:.3rem}
+    .issue-card__body ul li::before{content:'';position:absolute;left:0;top:.55rem;width:4px;height:4px;border-radius:50%;background:var(--accent-primary)}
+    .issue-card__body blockquote{border-left:3px solid var(--accent-primary);padding:.75rem 1rem;margin:.75rem 0;background:rgba(16,185,129,.05);border-radius:0 8px 8px 0;font-style:italic;color:var(--text-secondary);font-size:.85rem}
+    .issue-card__body pre{background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;margin:.75rem 0;font-family:var(--font-mono);font-size:.78rem;color:var(--accent-primary);overflow-x:auto;line-height:1.5;white-space:pre}
+    .issue-card__body code{font-family:var(--font-mono);font-size:.8rem;background:var(--bg-tertiary);padding:.15rem .4rem;border-radius:3px;color:var(--accent-primary)}
+    .issue-card__body table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.8rem}
+    .issue-card__body th{text-align:left;padding:.5rem .75rem;background:var(--bg-tertiary);color:var(--accent-primary);font-family:var(--font-mono);font-weight:500;font-size:.75rem;border-bottom:1px solid var(--border-subtle)}
+    .issue-card__body td{padding:.5rem .75rem;color:var(--text-secondary);border-bottom:1px solid rgba(31,41,55,.5)}
+
+    .tip{background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:.75rem 1rem;margin:.75rem 0;font-size:.8rem}
+    .tip__label{font-family:var(--font-mono);font-size:.7rem;color:#f59e0b;text-transform:uppercase;margin-bottom:.25rem}
+    .tip p{color:var(--text-secondary);margin:0}
+
+    .takeaway{background:rgba(16,185,129,.08);border-left:3px solid var(--accent-primary);border-radius:0 8px 8px 0;padding:.75rem 1rem;margin:1rem 0;font-size:.85rem}
+    .takeaway p{color:var(--text-primary);margin:0;font-weight:500}
+
+    .footer{padding:2rem;text-align:center;border-top:1px solid var(--border-subtle);margin-top:2rem}
+    .footer p{font-size:.8rem;color:var(--text-muted)}
+    .footer a{color:var(--accent-primary);text-decoration:none}
+
+    @media(max-width:768px){.container{padding:1rem}.hero__title{font-size:1.8rem}.issue-card__header{flex-direction:column;gap:.5rem}}
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header__inner">
+      <span class="header__title">Cloud Decoded</span>
+      <div class="header__links">
+        <a href="gcp-architect-study.html">Study Hub</a>
+        <a href="index.html">Portfolio</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1 class="hero__title">Cloud Decoded</h1>
+      <p class="hero__subtitle">Google Cloud announcements, decoded for practitioners. Simple language, real examples, practical impact.</p>
+      <p class="hero__tagline">By Romulo Leao &middot; Data Architect</p>
+    </div>
+
+    <div class="issues" id="issues"></div>
+  </div>
+
+  <footer class="footer">
+    <p>Cloud Decoded &middot; Built by <a href="index.html">Romulo Leao</a></p>
+  </footer>
+
+  <script>
+  (function(){
+    var issues = [
+      {
+        num: '005',
+        title: 'Cloud Run Now Runs AI Agents (with Identity, Sandboxes, and GPUs)',
+        tldr: 'Cloud Run got Agent Identity, 300 sandboxes/sec, and NVIDIA RTX PRO 6000 GPUs. Serverless just became the default home for AI agents.',
+        tags: ['Cloud Run', 'Agents', 'GPU'],
+        certs: ['PCA'],
+        body: '<h2>What Changed</h2><p>Cloud Run was a serverless container platform. Now it\'s becoming the <strong>default runtime for AI agents</strong> on GCP with three key additions:</p><ul><li><strong>Agent Identity</strong> — Each agent gets a unique cryptographic ID for authentication</li><li><strong>Sandboxes</strong> — Spin up 300 isolated environments per second for agent code execution</li><li><strong>GPU support</strong> — NVIDIA RTX PRO 6000 Blackwell GPUs for ML inference</li></ul><h2>Agent Identity</h2><p>The problem: When an AI agent calls your BigQuery API, who is it? A human? A service account? A rogue agent?</p><p>The solution: <strong>Agent Identity</strong> gives each agent a unique cryptographic ID, registered in the Agent Registry.</p><pre>gcloud run deploy my-data-agent \\\n  --image gcr.io/my-project/data-agent \\\n  --agent-identity=enabled \\\n  --agent-registry=enabled</pre><h2>Sandboxes (300/second)</h2><p>An AI agent generates Python code and wants to execute it. You can\'t just <code>exec()</code> random code in production. Agent Sandboxes are ephemeral, strictly isolated containers that spin up in milliseconds, execute the code, return results, and self-destruct.</p><h2>GPU Support</h2><pre>gcloud run deploy my-inference-api \\\n  --image gcr.io/my-project/ml-model \\\n  --gpu=nvidia-rtx-pro-6000 \\\n  --min-instances=0 --max-instances=5</pre><p><strong>Before:</strong> Set up GKE cluster, configure GPU node pools, manage drivers. <strong>After:</strong> One flag. Scales to zero.</p><h2>Ambient Networking</h2><p>Cloud Run got <strong>ambient networking</strong> — service discovery, zero-trust access (mTLS), and traffic management between Cloud Run services and GKE pods. No sidecar proxies needed.</p><div class="tip"><div class="tip__label">Exam Impact</div><p>Updated compute decision: Cloud Run → serverless containers + agents + GPU. GKE → complex orchestration, stateful workloads. "Minimum operational overhead for AI agent" → <strong>Cloud Run</strong>.</p></div><div class="takeaway"><p>Cloud Run went from "serverless web API" to "serverless AI agent runtime with its own identity, sandboxes, and GPUs."</p></div>'
+      },
+      {
+        num: '004',
+        title: 'Spanner Left Google Cloud. It Runs Everywhere Now.',
+        tldr: 'Spanner Omni runs on AWS, Azure, on-prem, even your laptop. Columnar Engine accelerates analytics 200x on live data. No more "we can\'t use Spanner because we\'re on AWS."',
+        tags: ['Spanner', 'Multi-Cloud', 'Analytics'],
+        certs: ['PCA', 'PDE'],
+        body: '<h2>Two Massive Updates</h2><ul><li><strong>Spanner Omni</strong> — Run Spanner anywhere: multi-cloud, on-prem, your laptop</li><li><strong>Spanner Columnar Engine</strong> — Run analytics 200x faster on live operational data</li></ul><h2>Spanner Omni</h2><p><strong>Before:</strong> "We can\'t use Spanner because we\'re on AWS." End of conversation.</p><p><strong>After:</strong> "We run Spanner on AWS, and it syncs globally with our GCP instances." Conversation changed.</p><h2>Columnar Engine</h2><p><strong>Before:</strong> Want analytics on Spanner data? Export to BigQuery. Maintain a pipeline. Accept stale data.</p><p><strong>After:</strong> Run analytical queries directly on live Spanner data. 200x faster. Zero export.</p><pre>SELECT region, product_category,\n  SUM(order_total) as revenue,\n  COUNT(DISTINCT customer_id) as unique_customers\nFROM orders\nWHERE order_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)\nGROUP BY region, product_category\nORDER BY revenue DESC</pre><p>Same query. 200x faster. On live production data. No export needed.</p><h2>Spanner AI Functions</h2><pre>SELECT ticket_id,\n  AI.CLASSIFY(description,\n    [\'billing\',\'technical\',\'account\',\'feature_request\']\n  ) as category,\n  AI.SCORE(description,\n    \'Rate urgency from 1-10\'\n  ) as urgency\nFROM support_tickets</pre><div class="tip"><div class="tip__label">Exam Impact</div><p>"When to use Spanner vs BigQuery for analytics?" — If data is already in Spanner AND you need real-time freshness → Spanner Columnar Engine. No export pipeline.</p></div><div class="takeaway"><p>Spanner escaped Google Cloud. Runs anywhere, does analytics 200x faster, and classifies data with AI — all in SQL.</p></div>'
+      },
+      {
+        num: '003',
+        title: 'BigQuery Became a Lakehouse. And It Talks to AWS.',
+        tldr: 'BigQuery now reads from S3 and Azure without copying data. Reverse ETL pushes analytics back to Spanner in one SQL. Half your data pipelines might be unnecessary.',
+        tags: ['BigQuery', 'Lakehouse', 'Multi-Cloud'],
+        certs: ['PDE', 'PCA'],
+        body: '<h2>The Agentic Data Cloud</h2><p>Google launched three key pieces:</p><ul><li><strong>Cross-cloud lakehouse</strong> — BigQuery reads from S3 and Azure, zero copy</li><li><strong>Knowledge Catalog</strong> — maps business meaning across your data for AI agents</li><li><strong>Data agents</strong> — AI agents that do data science for you</li></ul><h2>Cross-Cloud Lakehouse</h2><pre>-- Query data in AWS S3, directly from BigQuery\nCREATE EXTERNAL TABLE my_dataset.aws_sales\nWITH CONNECTION `my-aws-connection`\nOPTIONS (\n  format = \'ICEBERG\',\n  uris = [\'s3://partner-bucket/sales/\']\n);\n\n-- Join with your GCP data\nSELECT gcp.customer_id, aws.revenue\nFROM my_dataset.customers AS gcp\nJOIN my_dataset.aws_sales AS aws\n  ON gcp.customer_id = aws.customer_id</pre><p>No data movement. No ETL. Zero copy.</p><h2>Reverse ETL</h2><pre>-- Push BigQuery analytics back to Spanner\nEXPORT DATA OPTIONS (\n  uri = \'spanner://my-instance/my-db/scores\',\n  format = \'SPANNER\'\n) AS\nSELECT customer_id, churn_score\nFROM ml_results.predictions</pre><p><strong>Before:</strong> Build a Dataflow pipeline. Maintain it forever. <strong>After:</strong> One SQL statement.</p><h2>Fluid Scaling</h2><p>Old: Reserve 100 slots, pay for 100. New: <strong>Per-second billing</strong>. Burst to 500 slots for 30 seconds, back to 10. Pay only what you use.</p><div class="takeaway"><p>BigQuery reads from S3 and Azure without copying. Your multi-cloud architecture just lost half its pipelines.</p></div>'
+      },
+      {
+        num: '002',
+        title: 'Vertex AI Is Dead. Meet Gemini Enterprise Agent Platform.',
+        tldr: 'Google killed the Vertex AI name. It\'s now the "Gemini Enterprise Agent Platform." The shift: from "build ML models" to "build AI agents that think, decide, and act."',
+        tags: ['Vertex AI', 'Agents', 'AI Platform'],
+        certs: ['PCA', 'MLE'],
+        body: '<h2>What Actually Changed</h2><table><thead><tr><th>Before (Vertex AI)</th><th>After (Agent Platform)</th></tr></thead><tbody><tr><td>Train models</td><td>Build agents that use models</td></tr><tr><td>Deploy endpoints</td><td>Agent Runtime (sub-second cold starts)</td></tr><tr><td>Model Garden (150+)</td><td>Model Garden (200+ including Claude, Llama)</td></tr><tr><td>Pipelines (Kubeflow)</td><td>Agent-to-agent orchestration</td></tr><tr><td>—</td><td>Agent Identity (cryptographic IDs)</td></tr><tr><td>—</td><td>Agent Gateway (policy enforcement)</td></tr><tr><td>—</td><td>Agent Studio (low-code, natural language)</td></tr></tbody></table><h2>The Difference</h2><p><strong>Old way:</strong> Train a churn prediction model → deploy endpoint → call for predictions.</p><p><strong>New way:</strong> Build a churn prevention <em>agent</em> that predicts churn AND takes action — sends emails, creates discounts, escalates to humans.</p><p>A model predicts. An agent <strong>acts</strong>.</p><h2>Try It</h2><p>Go to console.cloud.google.com → Gemini Enterprise Agent Platform → Agent Studio → describe your agent in natural language. The platform generates the code.</p><div class="tip"><div class="tip__label">Exam Impact</div><p>If study materials say "Vertex AI," mentally replace with "Gemini Enterprise Agent Platform." Updated exams include agentic AI case studies.</p></div><div class="takeaway"><p>Vertex AI trained models. Gemini Enterprise Agent Platform builds agents that think, decide, and act — using any model.</p></div>'
+      },
+      {
+        num: '001',
+        title: 'BigQuery Now Speaks AI Natively',
+        tldr: 'Run sentiment analysis, translate text, generate embeddings — all with SQL. No Python. No Vertex AI pipeline. One query replaces your entire ML processing script.',
+        tags: ['BigQuery', 'AI Functions', 'SQL'],
+        certs: ['PDE', 'PCA'],
+        body: '<h2>What\'s New</h2><p>BigQuery released <code>AI.GENERATE</code>, <code>AI.EMBED</code>, and <code>AI.SIMILARITY</code> — functions that call Gemini models directly from SQL.</p><h2>Before vs After</h2><p><strong>Before:</strong> Export data → Python script → Call Vertex AI API → Handle batching → Load results back. 2-3 hours of work.</p><p><strong>After:</strong></p><pre>SELECT review_id, product_name,\n  AI.GENERATE(\n    CONCAT(\'Analyze this review: \',\n      \'1) sentiment 2) topic 3) summary\'),\n    text,\n    output_schema => STRUCT&lt;\n      sentiment STRING,\n      topic STRING,\n      summary STRING\n    &gt;\n  ).*\nFROM customer_reviews\nWHERE DATE(created_at) = CURRENT_DATE()</pre><p>One query. Structured output. No Python. BigQuery scale.</p><h2>Decision Tree (Updated)</h2><ul><li>Need to TRAIN a custom model → <strong>Vertex AI</strong></li><li>Need to TRAIN with SQL → <strong>BigQuery ML</strong></li><li>Need to USE a pre-trained model on your data → <strong>BigQuery AI functions</strong> (NEW)</li></ul><h2>Try It (5 min)</h2><pre>SELECT title,\n  AI.GENERATE(\n    \'Classify as: tech, politics, sports, business\',\n    title\n  ) AS category\nFROM `bigquery-public-data.hacker_news.stories`\nWHERE score > 100\nLIMIT 10</pre><div class="takeaway"><p>BigQuery AI functions = "Hey Gemini, analyze this column" — in SQL. No pipelines, no Python, no infra.</p></div>'
+      }
+    ];
+
+    var container = document.getElementById('issues');
+
+    issues.forEach(function(issue) {
+      var tagsHtml = issue.tags.map(function(t) {
+        return '<span class="issue-card__tag">' + t + '</span>';
+      }).join('');
+      var certsHtml = issue.certs.map(function(c) {
+        return '<span class="issue-card__tag issue-card__tag--cert">' + c + '</span>';
+      }).join('');
+
+      var card = document.createElement('div');
+      card.className = 'issue-card';
+      card.innerHTML =
+        '<div class="issue-card__header">' +
+          '<span class="issue-card__number">#' + issue.num + '</span>' +
+          '<div class="issue-card__info">' +
+            '<div class="issue-card__title">' + issue.title + '</div>' +
+            '<div class="issue-card__tldr">' + issue.tldr + '</div>' +
+            '<div class="issue-card__meta">' + tagsHtml + certsHtml + '</div>' +
+          '</div>' +
+          '<span class="issue-card__arrow">&#9660;</span>' +
+        '</div>' +
+        '<div class="issue-card__body">' + issue.body + '</div>';
+
+      card.querySelector('.issue-card__header').addEventListener('click', function() {
+        card.classList.toggle('open');
+      });
+
+      container.appendChild(card);
+    });
+  })();
+  </script>
+</body>
+</html>
