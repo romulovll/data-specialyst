@@ -52,6 +52,10 @@ class ProgressPayload(BaseModel):
     progress: dict
 
 
+class SubscribePayload(BaseModel):
+    email: str
+
+
 @app.get("/api/health")
 def health():
     try:
@@ -109,6 +113,37 @@ def login(payload: AuthPayload):
             JWT_SECRET, algorithm="HS256",
         )
         return {"token": token, "email": payload.email.lower()}
+    finally:
+        conn.close()
+
+
+@app.post("/api/newsletter/subscribe")
+def subscribe(payload: SubscribePayload):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO newsletter_subscribers (email)
+                VALUES (%s)
+                ON CONFLICT (email) DO NOTHING
+                """,
+                (payload.email.lower(),),
+            )
+        conn.commit()
+        return {"status": "subscribed", "email": payload.email.lower()}
+    finally:
+        conn.close()
+
+
+@app.get("/api/newsletter/subscribers")
+def list_subscribers(authorization: str = Header(None)):
+    user_id = get_user_id(authorization)
+    conn = get_conn()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT email, subscribed_at FROM newsletter_subscribers ORDER BY subscribed_at DESC")
+            return {"subscribers": cur.fetchall()}
     finally:
         conn.close()
 

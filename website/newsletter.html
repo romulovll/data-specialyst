@@ -92,6 +92,17 @@
       <p class="hero__tagline">By Romulo Leao &middot; Data Architect</p>
     </div>
 
+    <!-- Subscribe Form -->
+    <div style="background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;padding:1.5rem;margin-bottom:2rem;text-align:center">
+      <p style="font-size:.95rem;font-weight:600;margin-bottom:.5rem">Get new issues in your inbox</p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem">Join the newsletter — one GCP update decoded per week</p>
+      <form id="subscribeForm" style="display:flex;gap:.5rem;max-width:450px;margin:0 auto">
+        <input type="email" id="subEmail" required placeholder="your@email.com" style="flex:1;padding:.6rem 1rem;background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font-family:var(--font-body);font-size:.85rem;outline:none">
+        <button type="submit" id="subBtn" style="padding:.6rem 1.25rem;background:var(--accent-gradient);color:var(--bg-primary);border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap">Subscribe</button>
+      </form>
+      <p id="subMsg" style="font-size:.8rem;margin-top:.75rem;display:none"></p>
+    </div>
+
     <div class="issues" id="issues"></div>
   </div>
 
@@ -101,6 +112,29 @@
 
   <script>
   (function(){
+    var API = 'https://studyhub-api-881000472963.southamerica-east1.run.app/api';
+    document.getElementById('subscribeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('subEmail').value;
+      var btn = document.getElementById('subBtn');
+      var msg = document.getElementById('subMsg');
+      btn.disabled = true; btn.textContent = '...';
+      fetch(API + '/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        msg.style.display = 'block';
+        msg.style.color = '#10b981';
+        msg.textContent = 'You\'re in! We\'ll send new issues to ' + email;
+        document.getElementById('subEmail').value = '';
+      }).catch(function() {
+        msg.style.display = 'block';
+        msg.style.color = '#ef4444';
+        msg.textContent = 'Something went wrong. Try again.';
+      }).finally(function() { btn.disabled = false; btn.textContent = 'Subscribe'; });
+    });
+
     var issues = [
       {
         num: '005',
