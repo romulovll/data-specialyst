@@ -12,7 +12,6 @@ import sys
 import json
 from datetime import datetime, timedelta
 
-import feedparser
 import anthropic
 import psycopg2
 
@@ -50,61 +49,38 @@ CERT_MAP = {
 }
 
 
-def fetch_release_notes(days=7):
-    """Fetch GCP release notes from the past N days."""
-    feed = feedparser.parse(RSS_URL)
-    cutoff = datetime.utcnow() - timedelta(days=days)
-    entries = []
-
-    for entry in feed.entries:
-        published = datetime(*entry.published_parsed[:6])
-        if published >= cutoff:
-            entries.append({
-                "title": entry.title,
-                "summary": entry.summary[:500],
-                "link": entry.link,
-                "published": published.strftime("%b %d, %Y"),
-            })
-
-    return entries
-
-
-def identify_components(entries):
-    """Tag each entry with matching GCP components."""
-    for entry in entries:
-        text = (entry["title"] + " " + entry["summary"]).lower()
-        entry["components"] = []
-        for comp in COMPONENTS:
-            if comp.lower() in text:
-                entry["components"].append(comp)
-        if not entry["components"]:
-            entry["components"] = ["General"]
-    return entries
-
-
-def generate_issue(entries):
-    """Use Claude API to generate a newsletter issue."""
+def generate_issue():
+    """Use Claude API to find latest GCP updates and generate a newsletter issue."""
     if not ANTHROPIC_API_KEY:
         print("ERROR: ANTHROPIC_API_KEY not set")
         sys.exit(1)
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-    entries_text = "\n\n".join([
-        f"**{e['title']}** ({e['published']})\n{e['summary']}\nComponents: {', '.join(e['components'])}"
-        for e in entries[:20]
-    ])
+    today = datetime.now(tz=None).strftime("%B %d, %Y")
 
+    # Step 1: Ask Claude to find the latest GCP updates using web search
+    print("Searching for latest GCP updates...")
+    search_response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": f"Today is {today}. Search for the latest Google Cloud Platform announcements, release notes, and product updates from the past 7 days. Focus on: BigQuery, Spanner, Dataflow, Cloud Run, GKE, Vertex AI, Composer, Pub/Sub, AlloyDB, Cloud Storage, IAM, and security updates. List each update with the date, product name, and a brief description. Only include updates from the past 7 days."}],
+    )
+    updates_text = search_response.content[0].text
+
+    print(f"Found updates. Generating newsletter issue...")
+
+    # Step 2: Generate the newsletter issue from those updates
     prompt = f"""You are writing a newsletter issue for "Cloud Decoded" — a newsletter that takes Google Cloud announcements and explains them in simple language with practical examples.
 
-Here are the GCP release notes from the past week:
+Here are the latest GCP updates found:
 
-{entries_text}
+{updates_text}
 
-Write ONE newsletter issue that covers the most significant updates. Follow this exact JSON format:
+Write ONE newsletter issue that covers the most significant update(s). Follow this exact JSON format:
 
 {{
-  "date": "{datetime.utcnow().strftime('%b %d, %Y')}",
+  "date": "{datetime.now(tz=None).strftime('%b %d, %Y')}",
   "title": "A catchy, specific title (max 60 chars)",
   "tldr": "One sentence summary of the most important update (max 200 chars)",
   "tags": ["Component1", "Component2"],
@@ -128,13 +104,37 @@ Rules for the body HTML:
 Return ONLY valid JSON, no markdown fences."""
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=2000,
         messages=[{"role": "user", "content": prompt}],
     )
 
     text = response.content[0].text.strip()
-    return json.loads(text)
+    # Remove markdown fences if present
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        text = text.rsplit("```", 1)[0]
+    # Fix common JSON escape issues from LLM output
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Try fixing unescaped characters
+        import re
+        text = re.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', text)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {e}")
+            print(f"Raw text:\n{text[:500]}")
+            # Last resort: extract fields manually
+            return {
+                "date": datetime.now(tz=None).strftime("%b %d, %Y"),
+                "title": "Weekly GCP Update",
+                "tldr": "Check the latest Google Cloud updates.",
+                "tags": ["General"],
+                "certs": ["PCA"],
+                "body": f"<p>{text[:1500]}</p>",
+            }
 
 
 def save_issue(issue):
@@ -159,18 +159,8 @@ def save_issue(issue):
 def main():
     dry_run = "--dry-run" in sys.argv
 
-    print("Fetching GCP release notes...")
-    entries = fetch_release_notes(days=7)
-    print(f"Found {len(entries)} updates from the past week.")
-
-    if not entries:
-        print("No updates found. Skipping.")
-        return
-
-    entries = identify_components(entries)
-
     print("Generating newsletter issue with Claude...")
-    issue = generate_issue(entries)
+    issue = generate_issue()
 
     print(f"\nTitle: {issue['title']}")
     print(f"TL;DR: {issue['tldr']}")
