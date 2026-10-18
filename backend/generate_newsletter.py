@@ -62,7 +62,7 @@ def generate_issue():
     # Step 1: Ask Claude to find the latest GCP updates using web search
     print("Searching for latest GCP updates...")
     search_response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5-5",
         max_tokens=2000,
         messages=[{"role": "user", "content": f"Today is {today}. Search for the latest Google Cloud Platform announcements, release notes, and product updates from the past 7 days. Focus on: BigQuery, Spanner, Dataflow, Cloud Run, GKE, Vertex AI, Composer, Pub/Sub, AlloyDB, Cloud Storage, IAM, and security updates. List each update with the date, product name, and a brief description. Only include updates from the past 7 days."}],
     )
@@ -104,7 +104,7 @@ Rules for the body HTML:
 Return ONLY valid JSON, no markdown fences."""
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5-5",
         max_tokens=2000,
         messages=[{"role": "user", "content": prompt}],
     )
