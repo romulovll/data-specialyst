@@ -163,7 +163,7 @@ def list_issues():
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, date, title, tldr, tags, certs, body FROM newsletter_issues ORDER BY id DESC"
+                "SELECT id, date, title, tldr, tags, certs, body FROM newsletter_issues ORDER BY created_at DESC"
             )
             rows = cur.fetchall()
             return {"issues": rows}
