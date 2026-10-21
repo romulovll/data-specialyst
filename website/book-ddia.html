@@ -146,100 +146,14 @@
   </div>
 </div>
 <script src="js/auth.js"></script>
+<script src="js/ddia-data.js"></script>
 <script>
 (function(){
 var STORAGE_KEY='ddia-book-progress';var checkedItems={};
 function loadProgress(){return loadProgressFromAPI(STORAGE_KEY)}
 function saveProgress(){saveProgressToAPI(STORAGE_KEY)}
 
-var chapters={
-ch1:{title:'Ch 1: Trade-Offs in Data Systems Architecture',
-  summary:[
-    {id:'ch1-s1',name:'Operational vs Analytical Systems',content:'<h3>Two fundamentally different workloads</h3><table><thead><tr><th>Aspect</th><th>OLTP (Operational)</th><th>OLAP (Analytical)</th></tr></thead><tbody><tr><td>Purpose</td><td>Run the business</td><td>Understand the business</td></tr><tr><td>Queries</td><td>Simple, by key</td><td>Complex aggregations</td></tr><tr><td>Volume</td><td>Many small reads/writes</td><td>Few large scans</td></tr><tr><td>Latency</td><td>Milliseconds</td><td>Seconds to minutes</td></tr><tr><td>Users</td><td>Customers, apps</td><td>Analysts, dashboards</td></tr></tbody></table><div class="tip"><div class="tip__label">Key Insight</div><p>Don\'t mix OLTP and OLAP in one system. Your operational database should not be your analytics database.</p></div>'},
-    {id:'ch1-s2',name:'Systems of Record vs Derived Data',content:'<h3>The two types of data</h3><ul><li><strong>System of record (source of truth):</strong> The authoritative version. Where data is first written. E.g., your orders table in Cloud SQL.</li><li><strong>Derived data:</strong> Computed from the source of truth. Can be rebuilt. E.g., BigQuery analytics table, search index, cache.</li></ul><p>If derived data is lost, you rebuild it from the source of truth. If the source of truth is lost, it\'s gone forever.</p><div class="tip"><div class="tip__label">Architecture Rule</div><p>Always know which system is the source of truth. Everything else is derived and expendable.</p></div>'},
-    {id:'ch1-s3',name:'Cloud vs Self-Hosting',content:'<h3>The trade-offs</h3><table><thead><tr><th>Factor</th><th>Cloud (GCP/AWS)</th><th>Self-hosted</th></tr></thead><tbody><tr><td>Ops burden</td><td>Low (managed)</td><td>High (you manage)</td></tr><tr><td>Cost at scale</td><td>Higher</td><td>Lower (if you have the team)</td></tr><tr><td>Flexibility</td><td>Limited to service options</td><td>Full control</td></tr><tr><td>Time to deploy</td><td>Minutes</td><td>Days to weeks</td></tr></tbody></table>'},
-    {id:'ch1-s4',name:'Distributed vs Single-Node Systems',content:'<h3>When to distribute</h3><ul><li><strong>Stay single-node when:</strong> Your data fits in one machine. Simpler, faster, fewer bugs.</li><li><strong>Go distributed when:</strong> Data exceeds one machine, you need HA across regions, or you need horizontal scaling.</li></ul><p>The book\'s core message: <strong>distribution adds complexity</strong>. Don\'t distribute unless you have to. Modern machines are powerful — a single node can handle more than you think.</p>'}
-  ],
-  flashcards:[
-    {q:'What is the difference between OLTP and OLAP?',a:'OLTP = operational (many small reads/writes, ms latency, run the business). OLAP = analytical (complex aggregations, seconds latency, understand the business).'},
-    {q:'What is a "system of record"?',a:'The authoritative, source-of-truth version of data. Where data is first written. If lost, it cannot be rebuilt.'},
-    {q:'What is "derived data"?',a:'Data computed from the source of truth. Can be rebuilt if lost. Examples: caches, search indexes, analytics tables.'},
-    {q:'When should you use a distributed system vs single-node?',a:'Stay single-node when data fits in one machine. Distribute only when you need: data beyond one machine, HA across regions, or horizontal scaling. Distribution adds complexity.'},
-    {q:'Why shouldn\'t you mix OLTP and OLAP in one system?',a:'Different access patterns compete for resources. Analytics queries can slow down operational queries. Separate them: Cloud SQL for OLTP, BigQuery for OLAP.'}
-  ],
-  quiz:[
-    {q:'A retail company stores orders in PostgreSQL and runs nightly reports on the same database. Reports are slowing down transactions. What should they do?',opts:['Add more CPU to PostgreSQL','Create read replicas','Separate into OLTP (Cloud SQL) + OLAP (BigQuery)','Switch to MongoDB'],correct:2,explain:'Separate operational (OLTP) from analytical (OLAP) workloads. Use Cloud SQL for transactions, export to BigQuery for analytics. This is the fundamental OLTP/OLAP split.'},
-    {q:'Your BigQuery analytics table is corrupted. Is this a disaster?',opts:['Yes — data is permanently lost','No — rebuild it from the source of truth','Only if there\'s no backup','Depends on the table size'],correct:1,explain:'BigQuery analytics tables are derived data. They can always be rebuilt from the system of record (e.g., Cloud SQL, event logs). Derived data is expendable.'},
-    {q:'A startup with 100GB of data wants to build a "scalable distributed architecture." What\'s the best advice?',opts:['Use Spanner for global distribution','Build a microservices mesh with Kubernetes','Stay on a single PostgreSQL instance','Set up multi-region replication'],correct:2,explain:'100GB fits easily on a single machine. Distribution adds complexity without benefit at this scale. A single PostgreSQL instance is simpler, faster, and cheaper. Scale when you actually need to.'}
-  ],
-  palace:[
-    {room:'Front Door',desc:'The entrance — where you decide which path to take',items:[{obj:'Two doors',concept:'OLTP (left, fast revolving door) vs OLAP (right, wide warehouse door)'}]},
-    {room:'Living Room',desc:'The main room — where the truth lives',items:[{obj:'Family photo album',concept:'System of record (source of truth, irreplaceable)'},{obj:'TV showing photos',concept:'Derived data (can change the channel, rebuild from album)'}]},
-    {room:'Window',desc:'Looking outside vs inside',items:[{obj:'Cloud outside',concept:'Cloud hosting (someone else manages the weather)'},{obj:'Fireplace inside',concept:'Self-hosting (you chop the wood, but you control the heat)'}]},
-    {room:'Single chair vs dining table',desc:'One vs many',items:[{obj:'One comfy armchair',concept:'Single-node (simple, powerful, fits most needs)'},{obj:'Expandable dining table',concept:'Distributed system (more seats, but harder to coordinate dinner)'}]}
-  ],
-  scenarios:[
-    {context:'You\'re designing the data architecture for a new fintech app. It processes 500 transactions/second and needs real-time dashboards showing fraud metrics.',question:'Do you use one database for both, or separate systems?',answer:'Separate. OLTP database (Cloud SQL or Spanner) for transactions — needs low latency, ACID. OLAP system (BigQuery) for dashboards — needs aggregations across millions of rows. Use Dataflow or CDC to sync from OLTP to OLAP. Mixing them would cause analytics queries to slow down transaction processing.'},
-    {context:'Your team built a search index from the orders database. A bug corrupted the search index overnight.',question:'How worried should you be? What do you do?',answer:'Not very worried. The search index is derived data — it can be rebuilt from the orders database (system of record). Drop the corrupted index, rebuild from source. This is why understanding "source of truth vs derived" matters: derived data is expendable.'}
-  ],
-  gcpmap:[
-    {concept:'OLTP (Operational)',service:'Cloud SQL / Spanner / AlloyDB',why:'Low-latency reads/writes, ACID transactions, row-based storage'},
-    {concept:'OLAP (Analytical)',service:'BigQuery',why:'Columnar storage, optimized for aggregations, serverless scaling'},
-    {concept:'System of Record',service:'Cloud SQL / Spanner (primary DB)',why:'Source of truth for business data, strong consistency'},
-    {concept:'Derived Data',service:'BigQuery, Bigtable, Memorystore, Elasticsearch',why:'Rebuilt from source of truth, optimized for specific access patterns'},
-    {concept:'OLTP → OLAP sync',service:'Dataflow / CDC / BigQuery Data Transfer',why:'Move data from operational to analytical without coupling systems'},
-    {concept:'Single-node → Distributed',service:'Cloud SQL (single) → Spanner (distributed)',why:'Cloud SQL for single-region; Spanner when you need global, horizontal scaling'}
-  ]
-},
-ch6:{title:'Ch 6: Replication',
-  summary:[
-    {id:'ch6-s1',name:'Why Replicate?',content:'<h3>Three reasons</h3><ul><li><strong>High availability:</strong> If one node dies, another takes over</li><li><strong>Low latency:</strong> Place data close to users geographically</li><li><strong>Read scalability:</strong> Spread read load across replicas</li></ul>'},
-    {id:'ch6-s2',name:'Leader-Based Replication',content:'<h3>How it works</h3><ul><li>One <strong>leader</strong> (primary) handles all writes</li><li>Multiple <strong>followers</strong> (replicas) replicate from leader</li><li>Reads can go to any replica</li></ul><h3>Sync vs Async</h3><table><thead><tr><th>Type</th><th>Guarantee</th><th>Trade-off</th></tr></thead><tbody><tr><td><strong>Synchronous</strong></td><td>Follower confirmed before commit</td><td>Slower writes, stronger durability</td></tr><tr><td><strong>Asynchronous</strong></td><td>Leader commits without waiting</td><td>Faster writes, risk of data loss</td></tr><tr><td><strong>Semi-synchronous</strong></td><td>1 follower sync, rest async</td><td>Balance of speed and safety</td></tr></tbody></table>'},
-    {id:'ch6-s3',name:'Replication Lag Problems',content:'<h3>What can go wrong with async replication</h3><ul><li><strong>Read-after-write:</strong> User writes data, then reads from a replica that hasn\'t caught up yet → sees stale data</li><li><strong>Monotonic reads:</strong> User reads from different replicas → sees data go "backward" in time</li><li><strong>Consistent prefix reads:</strong> Causally related events appear out of order</li></ul><div class="tip"><div class="tip__label">Key Insight</div><p>Replication lag is the source of most "weird" database behavior. When something seems inconsistent, check if you\'re reading from a lagging replica.</p></div>'},
-    {id:'ch6-s4',name:'Multi-Leader and Leaderless',content:'<h3>Multi-Leader</h3><p>Multiple nodes accept writes. Used for multi-datacenter setups. Problem: <strong>write conflicts</strong> — two leaders modify the same row simultaneously.</p><h3>Leaderless (Dynamo-style)</h3><p>Any node accepts reads and writes. Uses <strong>quorum</strong>: write to W nodes, read from R nodes. If W + R > N, you\'re guaranteed to read the latest write.</p><ul><li><strong>Cassandra, DynamoDB</strong> use this model</li><li>Trade-off: eventual consistency, conflict resolution needed</li></ul>'}
-  ],
-  flashcards:[
-    {q:'What are the 3 reasons to replicate data?',a:'1) High availability (survive node failures). 2) Low latency (place data near users). 3) Read scalability (spread read load).'},
-    {q:'What is the difference between sync and async replication?',a:'Sync: leader waits for follower confirmation before committing — slower, stronger durability. Async: leader commits immediately — faster, but follower might lose recent writes if leader crashes.'},
-    {q:'What is "read-after-write consistency"?',a:'The guarantee that after writing data, you can immediately read it back. Async replication can break this if you read from a lagging replica.'},
-    {q:'What is a quorum in leaderless replication?',a:'Write to W nodes, read from R nodes. If W + R > N (total nodes), at least one read node has the latest write. Common: W=2, R=2, N=3.'},
-    {q:'When does multi-leader replication cause problems?',a:'Write conflicts: two leaders modify the same data simultaneously. Must resolve conflicts (last-writer-wins, merge, or custom logic).'}
-  ],
-  quiz:[
-    {q:'A user updates their profile, then refreshes the page and sees the old profile. What\'s happening?',opts:['Database is corrupted','They\'re reading from a lagging async replica','The write failed','Cache is stale'],correct:1,explain:'Classic read-after-write consistency problem. The write went to the leader, but the read hit a follower that hasn\'t replicated yet. Fix: read-your-own-writes consistency (route reads to leader after writes).'},
-    {q:'You need a database replicated across 3 regions for a global app. What replication model?',opts:['Single-leader with 3 followers','Multi-leader (one per region)','Leaderless with quorum','No replication, just caching'],correct:1,explain:'Multi-leader gives each region a writable node with low latency. Single-leader would route all writes to one region. Leaderless works too but is more complex. This is how Spanner works (though it uses consensus, not traditional multi-leader).'}
-  ],
-  palace:[
-    {room:'Kitchen',desc:'Where data gets cooked and served',items:[{obj:'Head chef',concept:'Leader (handles all writes)'},{obj:'Sous chefs copying recipes',concept:'Followers (replicate from leader)'},{obj:'Waiter bringing food instantly',concept:'Sync replication (waiter confirms delivery)'},{obj:'Waiter leaving food at the pass',concept:'Async replication (chef moves on, hopes it arrives)'}]},
-    {room:'Kitchen whiteboard',desc:'The order board',items:[{obj:'Order says "medium rare" but steak is raw',concept:'Replication lag (follower hasn\'t caught up)'},{obj:'Two chefs fighting over one recipe',concept:'Write conflict in multi-leader'},{obj:'Vote on which recipe is right',concept:'Quorum (W+R > N)'}]}
-  ],
-  scenarios:[
-    {context:'Your e-commerce app uses Cloud SQL with one read replica. During a flash sale, a customer places an order, then clicks "My Orders" and sees no orders.',question:'What happened and how do you fix it?',answer:'Read-after-write consistency violation. The order was written to the primary (leader), but "My Orders" read from the replica that hasn\'t caught up. Fix: after a write, route subsequent reads to the primary for that user (read-your-own-writes). In Cloud SQL, route post-write reads to the primary endpoint, not the read-replica endpoint.'}
-  ],
-  gcpmap:[
-    {concept:'Single-leader replication',service:'Cloud SQL HA / AlloyDB',why:'Primary + standby in different zones. Writes to primary, failover to standby.'},
-    {concept:'Read replicas',service:'Cloud SQL Read Replicas',why:'Async followers for read scaling. Beware replication lag.'},
-    {concept:'Multi-leader (global)',service:'Spanner',why:'Multiple regions accept writes. Uses TrueTime for global consistency without conflicts.'},
-    {concept:'Leaderless',service:'Bigtable (conceptually)',why:'Bigtable distributes across nodes. Eventual consistency for cross-cluster replication.'},
-    {concept:'Quorum reads/writes',service:'Firestore',why:'Firestore uses quorum-based writes across replicas for strong consistency.'}
-  ]
-}
-};
-
-// Fill remaining chapters with placeholder
-['ch2','ch3','ch4','ch5','ch7','ch8','ch9','ch10','ch11','ch12','ch13'].forEach(function(ch){
-  if(!chapters[ch]){
-    var titles={ch2:'Ch 2: Defining Nonfunctional Requirements',ch3:'Ch 3: Data Models & Query Languages',ch4:'Ch 4: Storage and Retrieval',ch5:'Ch 5: Encoding and Evolution',ch7:'Ch 7: Partitioning',ch8:'Ch 8: Transactions',ch9:'Ch 9: The Trouble with Distributed Systems',ch10:'Ch 10: Consistency and Consensus',ch11:'Ch 11: Batch Processing',ch12:'Ch 12: Stream Processing',ch13:'Ch 13: Doing the Right Thing'};
-    chapters[ch]={title:titles[ch],
-      summary:[{id:ch+'-coming',name:'Coming Soon',content:'<p>Read this chapter in the book, then come back. Content will be generated as you progress.</p><div class="tip"><div class="tip__label">Study Tip</div><p>After reading the chapter, ask Claude: "Summarize DDIA Chapter X in the style of Cloud Decoded — key concepts, trade-offs, and GCP mappings."</p></div>'}],
-      flashcards:[{q:'Read the chapter first, then flashcards will appear.',a:'Use this prompt with Claude: "Generate 10 flashcards for DDIA Chapter X focusing on key concepts, trade-offs, and practical decisions."'}],
-      quiz:[{q:'Chapter content coming soon. Read the book first!',opts:['I\'ve read it!','Still reading...','Need to buy the book','Skipping ahead'],correct:0,explain:'Great! The quiz for this chapter will be generated soon.'}],
-      palace:[{room:'Room '+ch.replace('ch',''),desc:'Visualize this chapter\'s concepts in your space',items:[{obj:'(Read the chapter)',concept:'Then place concepts here using your imagination'}]}],
-      scenarios:[{context:'Read this chapter to unlock real-world scenarios.',question:'What are the key trade-offs in this chapter?',answer:'Read the chapter, then come back. Or ask Claude: "Give me 3 real-world architecture scenarios based on DDIA Chapter X."'}],
-      gcpmap:[{concept:'(Read chapter first)',service:'—',why:'GCP mappings will appear after you study this chapter'}]
-    };
-  }
-});
+var chapters = DDIA_CHAPTERS;
 
 var currentCh='ch1';var currentMode='summary';
 
