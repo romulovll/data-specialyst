@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDIA — Book Learning System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <style>
+    :root{--bg-primary:#0a0e17;--bg-secondary:#111827;--bg-tertiary:#1f2937;--accent-primary:#e11d48;--accent-secondary:#f43f5e;--accent-gradient:linear-gradient(135deg,#e11d48,#f97316);--status-complete:#10b981;--status-in-progress:#f59e0b;--status-planned:#6b7280;--text-primary:#f9fafb;--text-secondary:#9ca3af;--text-muted:#6b7280;--border-subtle:#1f2937;--font-body:'Inter',system-ui,sans-serif;--font-mono:'JetBrains Mono','Fira Code',monospace}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:300px;background:var(--bg-secondary);border-right:1px solid var(--border-subtle);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:50}
+    .sidebar__header{padding:1.25rem;border-bottom:1px solid var(--border-subtle)}
+    .sidebar__title{font-size:.95rem;font-weight:700}.sidebar__book{font-size:.7rem;color:var(--text-muted);font-family:var(--font-mono)}
+    .sidebar__progress{margin-top:.75rem}.sidebar__progress-text{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-muted);margin-bottom:.35rem;font-family:var(--font-mono)}
+    .sidebar__progress-bar{height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden}.sidebar__progress-fill{height:100%;background:var(--accent-gradient);border-radius:3px;transition:width .5s ease}
+    .sidebar__nav{padding:.5rem 0}
+    .sidebar__section-title{font-size:.6rem;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;padding:.75rem 1.25rem .25rem}
+    .sidebar__link{display:flex;align-items:center;gap:.5rem;padding:.4rem 1.25rem;color:var(--text-secondary);text-decoration:none;font-size:.75rem;transition:all .2s;border-left:2px solid transparent;cursor:pointer;background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left}
+    .sidebar__link:hover{color:var(--text-primary);background:rgba(225,29,72,.05)}.sidebar__link.active{color:var(--accent-primary);border-left-color:var(--accent-primary);background:rgba(225,29,72,.08)}
+    .sidebar__link-dot{width:6px;height:6px;border-radius:50%;background:var(--status-planned);flex-shrink:0}.sidebar__link-dot--done{background:var(--status-complete)}.sidebar__link-dot--active{background:var(--status-in-progress)}
+    .sidebar__link-count{margin-left:auto;font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted)}
+    .sidebar__footer{padding:.75rem 1.25rem;border-top:1px solid var(--border-subtle);font-size:.75rem}.sidebar__footer a{color:var(--accent-primary);text-decoration:none}
+    .sidebar-toggle{display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:60;width:48px;height:48px;border-radius:50%;background:var(--accent-gradient);border:none;color:white;font-size:1.2rem;cursor:pointer;box-shadow:0 4px 15px rgba(225,29,72,.3);align-items:center;justify-content:center}
+    .main{margin-left:300px;flex:1;min-width:0}
+    .main__header{position:sticky;top:0;z-index:40;background:rgba(10,14,23,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+    .main__header h1{font-size:1rem;font-weight:600}
+    /* Tabs */
+    .mode-tabs{display:flex;gap:0;background:var(--bg-tertiary);border-radius:8px;padding:3px;margin-bottom:1.5rem}
+    .mode-tab{flex:1;padding:.5rem;text-align:center;font-size:.75rem;font-weight:500;color:var(--text-muted);cursor:pointer;border-radius:6px;border:none;background:none;transition:all .2s;font-family:var(--font-mono)}
+    .mode-tab.active{background:var(--accent-gradient);color:white;font-weight:600}
+    .content{padding:2rem;max-width:900px}
+    .section-title{font-size:1.3rem;font-weight:700;margin-bottom:.5rem;background:var(--accent-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;display:inline-block}
+    .section-desc{color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem}
+    /* Cards */
+    .card{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;margin-bottom:1rem;overflow:hidden}
+    .card__header{padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .2s}
+    .card__header:hover{background:rgba(225,29,72,.03)}
+    .card__header-left{display:flex;align-items:center;gap:.75rem}
+    .card__checkbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid var(--border-subtle);border-radius:4px;cursor:pointer;position:relative;flex-shrink:0;transition:all .2s}
+    .card__checkbox:checked{background:var(--status-complete);border-color:var(--status-complete)}
+    .card__checkbox:checked::after{content:'\2713';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:.65rem;font-weight:700}
+    .card__name{font-size:.88rem;font-weight:600}
+    .card.checked .card__name{color:var(--status-complete);text-decoration:line-through;opacity:.7}
+    .card__arrow{color:var(--text-muted);font-size:.75rem;transition:transform .3s}
+    .card.open .card__arrow{transform:rotate(180deg)}
+    .card__body{display:none;padding:0 1.25rem 1.25rem;border-top:1px solid var(--border-subtle)}.card.open .card__body{display:block}
+    .card__body h3{font-size:.85rem;font-weight:600;color:var(--accent-primary);margin:1rem 0 .4rem}.card__body h3:first-child{margin-top:.75rem}
+    .card__body p{color:var(--text-secondary);font-size:.82rem;line-height:1.7;margin-bottom:.4rem}
+    .card__body strong{color:var(--text-primary)}
+    .card__body ul{list-style:none;margin-bottom:.6rem}.card__body ul li{color:var(--text-secondary);font-size:.82rem;line-height:1.5;padding-left:.9rem;position:relative;margin-bottom:.25rem}
+    .card__body ul li::before{content:'';position:absolute;left:0;top:.5rem;width:4px;height:4px;border-radius:50%;background:var(--accent-primary)}
+    .card__body table{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:.78rem}
+    .card__body th{text-align:left;padding:.4rem .6rem;background:var(--bg-tertiary);color:var(--accent-primary);font-family:var(--font-mono);font-weight:500;font-size:.7rem;border-bottom:1px solid var(--border-subtle)}
+    .card__body td{padding:.4rem .6rem;color:var(--text-secondary);border-bottom:1px solid rgba(31,41,55,.5)}
+    .card__body pre{background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:8px;padding:.75rem;margin:.6rem 0;font-family:var(--font-mono);font-size:.73rem;color:var(--accent-primary);overflow-x:auto;line-height:1.4;white-space:pre}
+    /* Flashcard */
+    .flashcard{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;padding:1.5rem;margin-bottom:1rem;cursor:pointer;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;transition:all .3s}
+    .flashcard:hover{border-color:var(--accent-primary)}
+    .flashcard__front{font-size:.95rem;font-weight:600}.flashcard__back{display:none;font-size:.85rem;color:var(--text-secondary);line-height:1.6}
+    .flashcard.flipped .flashcard__front{display:none}.flashcard.flipped .flashcard__back{display:block}
+    .flashcard__hint{font-family:var(--font-mono);font-size:.65rem;color:var(--text-muted);margin-top:.75rem}
+    .fc-controls{display:flex;gap:.5rem;justify-content:center;margin-bottom:1.5rem}
+    .fc-btn{padding:.4rem 1rem;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-size:.8rem;transition:all .2s}
+    .fc-btn:hover{border-color:var(--accent-primary);color:var(--text-primary)}
+    .fc-btn--know{border-color:rgba(16,185,129,.3);color:var(--status-complete)}.fc-btn--hard{border-color:rgba(225,29,72,.3);color:var(--accent-primary)}
+    /* Quiz */
+    .quiz-q{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+    .quiz-q__text{font-size:.9rem;font-weight:600;margin-bottom:.75rem}
+    .quiz-q__options{display:flex;flex-direction:column;gap:.4rem}
+    .quiz-opt{padding:.6rem .9rem;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--text-secondary);transition:all .2s;background:var(--bg-tertiary)}
+    .quiz-opt:hover{border-color:var(--accent-primary);color:var(--text-primary)}
+    .quiz-opt.correct{border-color:var(--status-complete);background:rgba(16,185,129,.1);color:var(--status-complete)}
+    .quiz-opt.wrong{border-color:var(--accent-primary);background:rgba(225,29,72,.1);color:var(--accent-primary)}
+    .quiz-opt.disabled{pointer-events:none}
+    .quiz-explain{margin-top:.6rem;padding:.6rem;background:rgba(16,185,129,.05);border-radius:6px;font-size:.78rem;color:var(--text-secondary);display:none}
+    /* Memory Palace */
+    .palace-room{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+    .palace-room__name{font-size:.9rem;font-weight:600;margin-bottom:.5rem;color:var(--accent-primary)}
+    .palace-room__desc{font-size:.82rem;color:var(--text-secondary);margin-bottom:.6rem;font-style:italic}
+    .palace-room__items{display:flex;flex-direction:column;gap:.4rem}
+    .palace-item{display:flex;gap:.6rem;font-size:.8rem;padding:.4rem .6rem;background:var(--bg-tertiary);border-radius:6px}
+    .palace-item__object{font-weight:600;color:var(--text-primary);min-width:120px}
+    .palace-item__concept{color:var(--text-secondary)}
+    /* Scenario */
+    .scenario{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+    .scenario__context{font-size:.85rem;color:var(--text-secondary);margin-bottom:.75rem;line-height:1.6;border-left:3px solid var(--accent-primary);padding-left:.75rem}
+    .scenario__question{font-size:.9rem;font-weight:600;margin-bottom:.5rem}
+    .scenario__answer{display:none;margin-top:.75rem;padding:.75rem;background:rgba(16,185,129,.05);border-radius:8px;font-size:.82rem;color:var(--text-secondary);line-height:1.6}
+    .scenario__toggle{font-size:.75rem;color:var(--accent-primary);cursor:pointer;font-family:var(--font-mono);border:none;background:none;padding:0}
+    .tip{background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:.6rem .85rem;margin:.6rem 0;font-size:.78rem}
+    .tip__label{font-family:var(--font-mono);font-size:.65rem;color:#f59e0b;text-transform:uppercase;margin-bottom:.15rem}.tip p{color:var(--text-secondary);margin:0}
+
+    @media(max-width:768px){.sidebar{transform:translateX(-100%);transition:transform .3s}.sidebar.open{transform:translateX(0)}.sidebar-toggle{display:flex}.main{margin-left:0}.content{padding:1.5rem 1rem}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__header">
+      <div class="sidebar__title">Book Learning System</div>
+      <div class="sidebar__book">Designing Data-Intensive Applications (2nd Ed)</div>
+      <div class="sidebar__book">Kleppmann & Riccomini, 2026</div>
+      <div class="sidebar__progress"><div class="sidebar__progress-text"><span>Chapters</span><span id="progressText">0 / 13</span></div><div class="sidebar__progress-bar"><div class="sidebar__progress-fill" id="progressFill" style="width:0%"></div></div></div>
+    </div>
+    <nav class="sidebar__nav" id="sidebarNav">
+      <div class="sidebar__section-title">Part I: Foundations</div>
+      <button class="sidebar__link active" data-ch="ch1"><span class="sidebar__link-dot"></span>1. Trade-Offs in Data Systems</button>
+      <button class="sidebar__link" data-ch="ch2"><span class="sidebar__link-dot"></span>2. Nonfunctional Requirements</button>
+      <button class="sidebar__link" data-ch="ch3"><span class="sidebar__link-dot"></span>3. Data Models & Query Languages</button>
+      <button class="sidebar__link" data-ch="ch4"><span class="sidebar__link-dot"></span>4. Storage and Retrieval</button>
+      <button class="sidebar__link" data-ch="ch5"><span class="sidebar__link-dot"></span>5. Encoding and Evolution</button>
+      <div class="sidebar__section-title">Part II: Distributed Data</div>
+      <button class="sidebar__link" data-ch="ch6"><span class="sidebar__link-dot"></span>6. Replication</button>
+      <button class="sidebar__link" data-ch="ch7"><span class="sidebar__link-dot"></span>7. Partitioning</button>
+      <button class="sidebar__link" data-ch="ch8"><span class="sidebar__link-dot"></span>8. Transactions</button>
+      <button class="sidebar__link" data-ch="ch9"><span class="sidebar__link-dot"></span>9. Trouble with Distributed Sys</button>
+      <button class="sidebar__link" data-ch="ch10"><span class="sidebar__link-dot"></span>10. Consistency and Consensus</button>
+      <div class="sidebar__section-title">Part III: Derived Data</div>
+      <button class="sidebar__link" data-ch="ch11"><span class="sidebar__link-dot"></span>11. Batch Processing</button>
+      <button class="sidebar__link" data-ch="ch12"><span class="sidebar__link-dot"></span>12. Stream Processing</button>
+      <button class="sidebar__link" data-ch="ch13"><span class="sidebar__link-dot"></span>13. Doing the Right Thing</button>
+    </nav>
+    <div class="sidebar__footer">
+      <a href="newsletter.html">Newsletter</a> &middot; <a href="gcp-architect-study.html">Study Hub</a> &middot; <a href="index.html">Portfolio</a>
+    </div>
+  </aside>
+  <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+  <div class="main">
+    <header class="main__header"><h1 id="chapterTitle">Ch 1: Trade-Offs in Data Systems Architecture</h1></header>
+    <div class="content">
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('summary')">Summary</button>
+        <button class="mode-tab" onclick="switchMode('flashcards')">Flashcards</button>
+        <button class="mode-tab" onclick="switchMode('quiz')">Quiz</button>
+        <button class="mode-tab" onclick="switchMode('palace')">Memory Palace</button>
+        <button class="mode-tab" onclick="switchMode('scenarios')">Scenarios</button>
+        <button class="mode-tab" onclick="switchMode('gcpmap')">GCP Map</button>
+      </div>
+      <div id="modeContent"></div>
+    </div>
+  </div>
+</div>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+var STORAGE_KEY='ddia-book-progress';var checkedItems={};
+function loadProgress(){return loadProgressFromAPI(STORAGE_KEY)}
+function saveProgress(){saveProgressToAPI(STORAGE_KEY)}
+
+var chapters={
+ch1:{title:'Ch 1: Trade-Offs in Data Systems Architecture',
+  summary:[
+    {id:'ch1-s1',name:'Operational vs Analytical Systems',content:'<h3>Two fundamentally different workloads</h3><table><thead><tr><th>Aspect</th><th>OLTP (Operational)</th><th>OLAP (Analytical)</th></tr></thead><tbody><tr><td>Purpose</td><td>Run the business</td><td>Understand the business</td></tr><tr><td>Queries</td><td>Simple, by key</td><td>Complex aggregations</td></tr><tr><td>Volume</td><td>Many small reads/writes</td><td>Few large scans</td></tr><tr><td>Latency</td><td>Milliseconds</td><td>Seconds to minutes</td></tr><tr><td>Users</td><td>Customers, apps</td><td>Analysts, dashboards</td></tr></tbody></table><div class="tip"><div class="tip__label">Key Insight</div><p>Don\'t mix OLTP and OLAP in one system. Your operational database should not be your analytics database.</p></div>'},
+    {id:'ch1-s2',name:'Systems of Record vs Derived Data',content:'<h3>The two types of data</h3><ul><li><strong>System of record (source of truth):</strong> The authoritative version. Where data is first written. E.g., your orders table in Cloud SQL.</li><li><strong>Derived data:</strong> Computed from the source of truth. Can be rebuilt. E.g., BigQuery analytics table, search index, cache.</li></ul><p>If derived data is lost, you rebuild it from the source of truth. If the source of truth is lost, it\'s gone forever.</p><div class="tip"><div class="tip__label">Architecture Rule</div><p>Always know which system is the source of truth. Everything else is derived and expendable.</p></div>'},
+    {id:'ch1-s3',name:'Cloud vs Self-Hosting',content:'<h3>The trade-offs</h3><table><thead><tr><th>Factor</th><th>Cloud (GCP/AWS)</th><th>Self-hosted</th></tr></thead><tbody><tr><td>Ops burden</td><td>Low (managed)</td><td>High (you manage)</td></tr><tr><td>Cost at scale</td><td>Higher</td><td>Lower (if you have the team)</td></tr><tr><td>Flexibility</td><td>Limited to service options</td><td>Full control</td></tr><tr><td>Time to deploy</td><td>Minutes</td><td>Days to weeks</td></tr></tbody></table>'},
+    {id:'ch1-s4',name:'Distributed vs Single-Node Systems',content:'<h3>When to distribute</h3><ul><li><strong>Stay single-node when:</strong> Your data fits in one machine. Simpler, faster, fewer bugs.</li><li><strong>Go distributed when:</strong> Data exceeds one machine, you need HA across regions, or you need horizontal scaling.</li></ul><p>The book\'s core message: <strong>distribution adds complexity</strong>. Don\'t distribute unless you have to. Modern machines are powerful — a single node can handle more than you think.</p>'}
+  ],
+  flashcards:[
+    {q:'What is the difference between OLTP and OLAP?',a:'OLTP = operational (many small reads/writes, ms latency, run the business). OLAP = analytical (complex aggregations, seconds latency, understand the business).'},
+    {q:'What is a "system of record"?',a:'The authoritative, source-of-truth version of data. Where data is first written. If lost, it cannot be rebuilt.'},
+    {q:'What is "derived data"?',a:'Data computed from the source of truth. Can be rebuilt if lost. Examples: caches, search indexes, analytics tables.'},
+    {q:'When should you use a distributed system vs single-node?',a:'Stay single-node when data fits in one machine. Distribute only when you need: data beyond one machine, HA across regions, or horizontal scaling. Distribution adds complexity.'},
+    {q:'Why shouldn\'t you mix OLTP and OLAP in one system?',a:'Different access patterns compete for resources. Analytics queries can slow down operational queries. Separate them: Cloud SQL for OLTP, BigQuery for OLAP.'}
+  ],
+  quiz:[
+    {q:'A retail company stores orders in PostgreSQL and runs nightly reports on the same database. Reports are slowing down transactions. What should they do?',opts:['Add more CPU to PostgreSQL','Create read replicas','Separate into OLTP (Cloud SQL) + OLAP (BigQuery)','Switch to MongoDB'],correct:2,explain:'Separate operational (OLTP) from analytical (OLAP) workloads. Use Cloud SQL for transactions, export to BigQuery for analytics. This is the fundamental OLTP/OLAP split.'},
+    {q:'Your BigQuery analytics table is corrupted. Is this a disaster?',opts:['Yes — data is permanently lost','No — rebuild it from the source of truth','Only if there\'s no backup','Depends on the table size'],correct:1,explain:'BigQuery analytics tables are derived data. They can always be rebuilt from the system of record (e.g., Cloud SQL, event logs). Derived data is expendable.'},
+    {q:'A startup with 100GB of data wants to build a "scalable distributed architecture." What\'s the best advice?',opts:['Use Spanner for global distribution','Build a microservices mesh with Kubernetes','Stay on a single PostgreSQL instance','Set up multi-region replication'],correct:2,explain:'100GB fits easily on a single machine. Distribution adds complexity without benefit at this scale. A single PostgreSQL instance is simpler, faster, and cheaper. Scale when you actually need to.'}
+  ],
+  palace:[
+    {room:'Front Door',desc:'The entrance — where you decide which path to take',items:[{obj:'Two doors',concept:'OLTP (left, fast revolving door) vs OLAP (right, wide warehouse door)'}]},
+    {room:'Living Room',desc:'The main room — where the truth lives',items:[{obj:'Family photo album',concept:'System of record (source of truth, irreplaceable)'},{obj:'TV showing photos',concept:'Derived data (can change the channel, rebuild from album)'}]},
+    {room:'Window',desc:'Looking outside vs inside',items:[{obj:'Cloud outside',concept:'Cloud hosting (someone else manages the weather)'},{obj:'Fireplace inside',concept:'Self-hosting (you chop the wood, but you control the heat)'}]},
+    {room:'Single chair vs dining table',desc:'One vs many',items:[{obj:'One comfy armchair',concept:'Single-node (simple, powerful, fits most needs)'},{obj:'Expandable dining table',concept:'Distributed system (more seats, but harder to coordinate dinner)'}]}
+  ],
+  scenarios:[
+    {context:'You\'re designing the data architecture for a new fintech app. It processes 500 transactions/second and needs real-time dashboards showing fraud metrics.',question:'Do you use one database for both, or separate systems?',answer:'Separate. OLTP database (Cloud SQL or Spanner) for transactions — needs low latency, ACID. OLAP system (BigQuery) for dashboards — needs aggregations across millions of rows. Use Dataflow or CDC to sync from OLTP to OLAP. Mixing them would cause analytics queries to slow down transaction processing.'},
+    {context:'Your team built a search index from the orders database. A bug corrupted the search index overnight.',question:'How worried should you be? What do you do?',answer:'Not very worried. The search index is derived data — it can be rebuilt from the orders database (system of record). Drop the corrupted index, rebuild from source. This is why understanding "source of truth vs derived" matters: derived data is expendable.'}
+  ],
+  gcpmap:[
+    {concept:'OLTP (Operational)',service:'Cloud SQL / Spanner / AlloyDB',why:'Low-latency reads/writes, ACID transactions, row-based storage'},
+    {concept:'OLAP (Analytical)',service:'BigQuery',why:'Columnar storage, optimized for aggregations, serverless scaling'},
+    {concept:'System of Record',service:'Cloud SQL / Spanner (primary DB)',why:'Source of truth for business data, strong consistency'},
+    {concept:'Derived Data',service:'BigQuery, Bigtable, Memorystore, Elasticsearch',why:'Rebuilt from source of truth, optimized for specific access patterns'},
+    {concept:'OLTP → OLAP sync',service:'Dataflow / CDC / BigQuery Data Transfer',why:'Move data from operational to analytical without coupling systems'},
+    {concept:'Single-node → Distributed',service:'Cloud SQL (single) → Spanner (distributed)',why:'Cloud SQL for single-region; Spanner when you need global, horizontal scaling'}
+  ]
+},
+ch6:{title:'Ch 6: Replication',
+  summary:[
+    {id:'ch6-s1',name:'Why Replicate?',content:'<h3>Three reasons</h3><ul><li><strong>High availability:</strong> If one node dies, another takes over</li><li><strong>Low latency:</strong> Place data close to users geographically</li><li><strong>Read scalability:</strong> Spread read load across replicas</li></ul>'},
+    {id:'ch6-s2',name:'Leader-Based Replication',content:'<h3>How it works</h3><ul><li>One <strong>leader</strong> (primary) handles all writes</li><li>Multiple <strong>followers</strong> (replicas) replicate from leader</li><li>Reads can go to any replica</li></ul><h3>Sync vs Async</h3><table><thead><tr><th>Type</th><th>Guarantee</th><th>Trade-off</th></tr></thead><tbody><tr><td><strong>Synchronous</strong></td><td>Follower confirmed before commit</td><td>Slower writes, stronger durability</td></tr><tr><td><strong>Asynchronous</strong></td><td>Leader commits without waiting</td><td>Faster writes, risk of data loss</td></tr><tr><td><strong>Semi-synchronous</strong></td><td>1 follower sync, rest async</td><td>Balance of speed and safety</td></tr></tbody></table>'},
+    {id:'ch6-s3',name:'Replication Lag Problems',content:'<h3>What can go wrong with async replication</h3><ul><li><strong>Read-after-write:</strong> User writes data, then reads from a replica that hasn\'t caught up yet → sees stale data</li><li><strong>Monotonic reads:</strong> User reads from different replicas → sees data go "backward" in time</li><li><strong>Consistent prefix reads:</strong> Causally related events appear out of order</li></ul><div class="tip"><div class="tip__label">Key Insight</div><p>Replication lag is the source of most "weird" database behavior. When something seems inconsistent, check if you\'re reading from a lagging replica.</p></div>'},
+    {id:'ch6-s4',name:'Multi-Leader and Leaderless',content:'<h3>Multi-Leader</h3><p>Multiple nodes accept writes. Used for multi-datacenter setups. Problem: <strong>write conflicts</strong> — two leaders modify the same row simultaneously.</p><h3>Leaderless (Dynamo-style)</h3><p>Any node accepts reads and writes. Uses <strong>quorum</strong>: write to W nodes, read from R nodes. If W + R > N, you\'re guaranteed to read the latest write.</p><ul><li><strong>Cassandra, DynamoDB</strong> use this model</li><li>Trade-off: eventual consistency, conflict resolution needed</li></ul>'}
+  ],
+  flashcards:[
+    {q:'What are the 3 reasons to replicate data?',a:'1) High availability (survive node failures). 2) Low latency (place data near users). 3) Read scalability (spread read load).'},
+    {q:'What is the difference between sync and async replication?',a:'Sync: leader waits for follower confirmation before committing — slower, stronger durability. Async: leader commits immediately — faster, but follower might lose recent writes if leader crashes.'},
+    {q:'What is "read-after-write consistency"?',a:'The guarantee that after writing data, you can immediately read it back. Async replication can break this if you read from a lagging replica.'},
+    {q:'What is a quorum in leaderless replication?',a:'Write to W nodes, read from R nodes. If W + R > N (total nodes), at least one read node has the latest write. Common: W=2, R=2, N=3.'},
+    {q:'When does multi-leader replication cause problems?',a:'Write conflicts: two leaders modify the same data simultaneously. Must resolve conflicts (last-writer-wins, merge, or custom logic).'}
+  ],
+  quiz:[
+    {q:'A user updates their profile, then refreshes the page and sees the old profile. What\'s happening?',opts:['Database is corrupted','They\'re reading from a lagging async replica','The write failed','Cache is stale'],correct:1,explain:'Classic read-after-write consistency problem. The write went to the leader, but the read hit a follower that hasn\'t replicated yet. Fix: read-your-own-writes consistency (route reads to leader after writes).'},
+    {q:'You need a database replicated across 3 regions for a global app. What replication model?',opts:['Single-leader with 3 followers','Multi-leader (one per region)','Leaderless with quorum','No replication, just caching'],correct:1,explain:'Multi-leader gives each region a writable node with low latency. Single-leader would route all writes to one region. Leaderless works too but is more complex. This is how Spanner works (though it uses consensus, not traditional multi-leader).'}
+  ],
+  palace:[
+    {room:'Kitchen',desc:'Where data gets cooked and served',items:[{obj:'Head chef',concept:'Leader (handles all writes)'},{obj:'Sous chefs copying recipes',concept:'Followers (replicate from leader)'},{obj:'Waiter bringing food instantly',concept:'Sync replication (waiter confirms delivery)'},{obj:'Waiter leaving food at the pass',concept:'Async replication (chef moves on, hopes it arrives)'}]},
+    {room:'Kitchen whiteboard',desc:'The order board',items:[{obj:'Order says "medium rare" but steak is raw',concept:'Replication lag (follower hasn\'t caught up)'},{obj:'Two chefs fighting over one recipe',concept:'Write conflict in multi-leader'},{obj:'Vote on which recipe is right',concept:'Quorum (W+R > N)'}]}
+  ],
+  scenarios:[
+    {context:'Your e-commerce app uses Cloud SQL with one read replica. During a flash sale, a customer places an order, then clicks "My Orders" and sees no orders.',question:'What happened and how do you fix it?',answer:'Read-after-write consistency violation. The order was written to the primary (leader), but "My Orders" read from the replica that hasn\'t caught up. Fix: after a write, route subsequent reads to the primary for that user (read-your-own-writes). In Cloud SQL, route post-write reads to the primary endpoint, not the read-replica endpoint.'}
+  ],
+  gcpmap:[
+    {concept:'Single-leader replication',service:'Cloud SQL HA / AlloyDB',why:'Primary + standby in different zones. Writes to primary, failover to standby.'},
+    {concept:'Read replicas',service:'Cloud SQL Read Replicas',why:'Async followers for read scaling. Beware replication lag.'},
+    {concept:'Multi-leader (global)',service:'Spanner',why:'Multiple regions accept writes. Uses TrueTime for global consistency without conflicts.'},
+    {concept:'Leaderless',service:'Bigtable (conceptually)',why:'Bigtable distributes across nodes. Eventual consistency for cross-cluster replication.'},
+    {concept:'Quorum reads/writes',service:'Firestore',why:'Firestore uses quorum-based writes across replicas for strong consistency.'}
+  ]
+}
+};
+
+// Fill remaining chapters with placeholder
+['ch2','ch3','ch4','ch5','ch7','ch8','ch9','ch10','ch11','ch12','ch13'].forEach(function(ch){
+  if(!chapters[ch]){
+    var titles={ch2:'Ch 2: Defining Nonfunctional Requirements',ch3:'Ch 3: Data Models & Query Languages',ch4:'Ch 4: Storage and Retrieval',ch5:'Ch 5: Encoding and Evolution',ch7:'Ch 7: Partitioning',ch8:'Ch 8: Transactions',ch9:'Ch 9: The Trouble with Distributed Systems',ch10:'Ch 10: Consistency and Consensus',ch11:'Ch 11: Batch Processing',ch12:'Ch 12: Stream Processing',ch13:'Ch 13: Doing the Right Thing'};
+    chapters[ch]={title:titles[ch],
+      summary:[{id:ch+'-coming',name:'Coming Soon',content:'<p>Read this chapter in the book, then come back. Content will be generated as you progress.</p><div class="tip"><div class="tip__label">Study Tip</div><p>After reading the chapter, ask Claude: "Summarize DDIA Chapter X in the style of Cloud Decoded — key concepts, trade-offs, and GCP mappings."</p></div>'}],
+      flashcards:[{q:'Read the chapter first, then flashcards will appear.',a:'Use this prompt with Claude: "Generate 10 flashcards for DDIA Chapter X focusing on key concepts, trade-offs, and practical decisions."'}],
+      quiz:[{q:'Chapter content coming soon. Read the book first!',opts:['I\'ve read it!','Still reading...','Need to buy the book','Skipping ahead'],correct:0,explain:'Great! The quiz for this chapter will be generated soon.'}],
+      palace:[{room:'Room '+ch.replace('ch',''),desc:'Visualize this chapter\'s concepts in your space',items:[{obj:'(Read the chapter)',concept:'Then place concepts here using your imagination'}]}],
+      scenarios:[{context:'Read this chapter to unlock real-world scenarios.',question:'What are the key trade-offs in this chapter?',answer:'Read the chapter, then come back. Or ask Claude: "Give me 3 real-world architecture scenarios based on DDIA Chapter X."'}],
+      gcpmap:[{concept:'(Read chapter first)',service:'—',why:'GCP mappings will appear after you study this chapter'}]
+    };
+  }
+});
+
+var currentCh='ch1';var currentMode='summary';
+
+function switchMode(mode){
+  currentMode=mode;
+  document.querySelectorAll('.mode-tab').forEach(function(t){t.classList.remove('active')});
+  event.target.classList.add('active');
+  renderContent();
+}
+window.switchMode=switchMode;
+
+function renderContent(){
+  var ch=chapters[currentCh];if(!ch)return;
+  document.getElementById('chapterTitle').textContent=ch.title;
+  var el=document.getElementById('modeContent');
+  var html='';
+
+  if(currentMode==='summary'){
+    html='<h2 class="section-title">Chapter Summary</h2><p class="section-desc">Key concepts and trade-offs — 5 min read</p>';
+    ch.summary.forEach(function(s){
+      var isChecked=checkedItems[s.id]||false;
+      html+='<div class="card'+(isChecked?' checked':'')+'" data-id="'+s.id+'"><div class="card__header"><div class="card__header-left"><input type="checkbox" class="card__checkbox" '+(isChecked?'checked':'')+' data-id="'+s.id+'"><span class="card__name">'+s.name+'</span></div><span class="card__arrow">&#9660;</span></div><div class="card__body">'+s.content+'</div></div>';
+    });
+  } else if(currentMode==='flashcards'){
+    html='<h2 class="section-title">Flashcards</h2><p class="section-desc">Click to flip. Review at increasing intervals for maximum retention.</p><div class="fc-controls"><button class="fc-btn" onclick="prevCard()">&#9664; Prev</button><button class="fc-btn fc-btn--hard" onclick="nextCard()">Hard (see again soon)</button><button class="fc-btn fc-btn--know" onclick="nextCard()">Got it &#10003;</button></div>';
+    html+='<div id="fcContainer"></div><p style="text-align:center;font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted)" id="fcCounter"></p>';
+  } else if(currentMode==='quiz'){
+    html='<h2 class="section-title">Quiz</h2><p class="section-desc">Test your understanding — active recall is 3x more effective than re-reading.</p>';
+    ch.quiz.forEach(function(q,i){
+      html+='<div class="quiz-q"><div class="quiz-q__text">'+(i+1)+'. '+q.q+'</div><div class="quiz-q__options">';
+      q.opts.forEach(function(opt,j){
+        html+='<div class="quiz-opt" data-qi="'+i+'" data-oi="'+j+'" onclick="checkAnswer('+i+','+j+')">'+String.fromCharCode(65+j)+'. '+opt+'</div>';
+      });
+      html+='</div><div class="quiz-explain" id="explain-'+i+'">'+q.explain+'</div></div>';
+    });
+  } else if(currentMode==='palace'){
+    html='<h2 class="section-title">Memory Palace</h2><p class="section-desc">Walk through your house. Each room holds a concept. Spatial memory is the strongest human memory system.</p>';
+    ch.palace.forEach(function(r){
+      html+='<div class="palace-room"><div class="palace-room__name">&#127968; '+r.room+'</div><div class="palace-room__desc">"'+r.desc+'"</div><div class="palace-room__items">';
+      r.items.forEach(function(it){
+        html+='<div class="palace-item"><span class="palace-item__object">'+it.obj+' &rarr;</span><span class="palace-item__concept">'+it.concept+'</span></div>';
+      });
+      html+='</div></div>';
+    });
+  } else if(currentMode==='scenarios'){
+    html='<h2 class="section-title">Real-World Scenarios</h2><p class="section-desc">Architecture decisions based on this chapter. Think before revealing the answer.</p>';
+    ch.scenarios.forEach(function(s,i){
+      html+='<div class="scenario"><div class="scenario__context">'+s.context+'</div><div class="scenario__question">'+s.question+'</div><button class="scenario__toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'">Show Answer &#9660;</button><div class="scenario__answer">'+s.answer+'</div></div>';
+    });
+  } else if(currentMode==='gcpmap'){
+    html='<h2 class="section-title">GCP Mapping</h2><p class="section-desc">Every book concept mapped to a GCP service you use at work.</p><table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr><th style="text-align:left;padding:.5rem .75rem;background:var(--bg-tertiary);color:var(--accent-primary);font-family:var(--font-mono);font-size:.72rem;border-bottom:1px solid var(--border-subtle)">Book Concept</th><th style="text-align:left;padding:.5rem .75rem;background:var(--bg-tertiary);color:var(--accent-primary);font-family:var(--font-mono);font-size:.72rem;border-bottom:1px solid var(--border-subtle)">GCP Service</th><th style="text-align:left;padding:.5rem .75rem;background:var(--bg-tertiary);color:var(--accent-primary);font-family:var(--font-mono);font-size:.72rem;border-bottom:1px solid var(--border-subtle)">Why</th></tr></thead><tbody>';
+    ch.gcpmap.forEach(function(m){
+      html+='<tr><td style="padding:.5rem .75rem;color:var(--text-primary);border-bottom:1px solid rgba(31,41,55,.5);font-weight:600">'+m.concept+'</td><td style="padding:.5rem .75rem;color:var(--text-secondary);border-bottom:1px solid rgba(31,41,55,.5)"><strong>'+m.service+'</strong></td><td style="padding:.5rem .75rem;color:var(--text-muted);border-bottom:1px solid rgba(31,41,55,.5)">'+m.why+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+
+  el.innerHTML=html;
+
+  // Bind events
+  if(currentMode==='summary'){
+    el.querySelectorAll('.card__header').forEach(function(h){h.addEventListener('click',function(e){if(e.target.classList.contains('card__checkbox'))return;this.parentElement.classList.toggle('open')})});
+    el.querySelectorAll('.card__checkbox').forEach(function(cb){cb.addEventListener('change',function(e){e.stopPropagation();checkedItems[this.dataset.id]=this.checked;saveProgress();updateProgress();var card=this.closest('.card');if(this.checked)card.classList.add('checked');else card.classList.remove('checked')})});
+  }
+  if(currentMode==='flashcards') renderFlashcard();
+}
+
+// Flashcard navigation
+var fcIndex=0;
+function renderFlashcard(){
+  var cards=chapters[currentCh].flashcards;if(!cards||!cards.length)return;
+  if(fcIndex>=cards.length)fcIndex=0;if(fcIndex<0)fcIndex=cards.length-1;
+  var c=cards[fcIndex];
+  var el=document.getElementById('fcContainer');
+  el.innerHTML='<div class="flashcard" onclick="this.classList.toggle(\'flipped\')"><div class="flashcard__front">'+c.q+'<div class="flashcard__hint">Click to reveal answer</div></div><div class="flashcard__back">'+c.a+'</div></div>';
+  document.getElementById('fcCounter').textContent=(fcIndex+1)+' / '+cards.length;
+}
+window.prevCard=function(){fcIndex--;renderFlashcard()};
+window.nextCard=function(){fcIndex++;renderFlashcard()};
+
+// Quiz
+window.checkAnswer=function(qi,oi){
+  var q=chapters[currentCh].quiz[qi];
+  var opts=document.querySelectorAll('[data-qi="'+qi+'"]');
+  opts.forEach(function(o){o.classList.add('disabled');if(parseInt(o.dataset.oi)===q.correct)o.classList.add('correct');else if(parseInt(o.dataset.oi)===oi)o.classList.add('wrong')});
+  document.getElementById('explain-'+qi).style.display='block';
+};
+
+// Progress
+function updateProgress(){
+  var total=0;var done=0;
+  for(var ch in chapters){chapters[ch].summary.forEach(function(s){total++;if(checkedItems[s.id])done++})}
+  document.getElementById('progressText').textContent=done+' / '+total;
+  document.getElementById('progressFill').style.width=(total>0?Math.round(done/total*100):0)+'%';
+}
+
+// Navigation
+document.querySelectorAll('.sidebar__link').forEach(function(link){
+  link.addEventListener('click',function(){
+    currentCh=this.dataset.ch;fcIndex=0;
+    document.querySelectorAll('.sidebar__link').forEach(function(l){l.classList.remove('active')});
+    this.classList.add('active');
+    document.querySelectorAll('.mode-tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelector('.mode-tab').classList.add('active');
+    currentMode='summary';
+    renderContent();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+
+document.getElementById('sidebarToggle').addEventListener('click',function(){document.getElementById('sidebar').classList.toggle('open')});
+
+loadProgress().then(function(){renderContent();updateProgress()});
+})();
+</script>
+</body>
+</html>
