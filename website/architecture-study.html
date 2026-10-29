@@ -178,6 +178,7 @@
 
   <script src="js/auth.js"></script>
   <script>
+  var checkedItems = {};
   (function(){
     'use strict';
 
@@ -269,7 +270,6 @@
     };
 
     var STORAGE_KEY = 'data-arch-study-progress';
-    var checkedItems = {};
     function loadProgress() { return loadProgressFromAPI(STORAGE_KEY); }
     function saveProgress() { saveProgressToAPI(STORAGE_KEY); }
     function getCheckedCount() { var c=0; for(var k in checkedItems) if(checkedItems[k]) c++; return c; }

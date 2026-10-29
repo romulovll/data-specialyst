@@ -103,6 +103,7 @@
 </div>
 <script src="js/auth.js"></script>
 <script>
+var checkedItems = {};
 (function(){
 'use strict';
 var data={
@@ -162,7 +163,7 @@ var data={
   ]}
 };
 
-var STORAGE_KEY='gcp-pca-study-progress';var checkedItems={};
+var STORAGE_KEY='gcp-pca-study-progress';
 function loadProgress(){ return loadProgressFromAPI(STORAGE_KEY); }
 function saveProgress(){ saveProgressToAPI(STORAGE_KEY); }
 function getCheckedCount(){var c=0;for(var k in checkedItems)if(checkedItems[k])c++;return c;}

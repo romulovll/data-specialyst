@@ -571,6 +571,7 @@
 
   <script src="js/auth.js"></script>
   <script>
+  var checkedItems = {};
   (function () {
     'use strict';
 
@@ -933,7 +934,6 @@
     // State (persisted in localStorage)
     // ========================================
     var STORAGE_KEY = 'gcp-pde-study-progress';
-    var checkedItems = {};
     function loadProgress() { return loadProgressFromAPI(STORAGE_KEY); }
     function saveProgress() { saveProgressToAPI(STORAGE_KEY); }
 
