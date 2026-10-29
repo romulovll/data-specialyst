@@ -59,6 +59,13 @@ def generate_issue():
 
     today = datetime.now(tz=None).strftime("%B %d, %Y")
 
+    def extract_text(response):
+        """Extract text from response, skipping ThinkingBlocks."""
+        for block in response.content:
+            if hasattr(block, 'text'):
+                return block.text
+        return ""
+
     # Step 1: Ask Claude to find the latest GCP updates using web search
     print("Searching for latest GCP updates...")
     search_response = client.messages.create(
@@ -66,7 +73,7 @@ def generate_issue():
         max_tokens=2000,
         messages=[{"role": "user", "content": f"Today is {today}. Search for the latest Google Cloud Platform announcements, release notes, and product updates from the past 7 days. Focus on: BigQuery, Spanner, Dataflow, Cloud Run, GKE, Vertex AI, Composer, Pub/Sub, AlloyDB, Cloud Storage, IAM, and security updates. List each update with the date, product name, and a brief description. Only include updates from the past 7 days."}],
     )
-    updates_text = search_response.content[0].text
+    updates_text = extract_text(search_response)
 
     print(f"Found updates. Generating newsletter issue...")
 
@@ -109,7 +116,7 @@ Return ONLY valid JSON, no markdown fences."""
         messages=[{"role": "user", "content": prompt}],
     )
 
-    text = response.content[0].text.strip()
+    text = extract_text(response).strip()
     # Remove markdown fences if present
     if text.startswith("```"):
         text = text.split("\n", 1)[1]
