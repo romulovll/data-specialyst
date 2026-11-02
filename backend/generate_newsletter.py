@@ -23,7 +23,7 @@ DATABASE_URL = os.environ.get(
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 NEWSLETTER_URL = "https://romulovll.github.io/data-specialyst/newsletter.html"
-FROM_EMAIL = "Cloud Decoded <newsletter@pactnomad.app>"
+FROM_EMAIL = "Cloud Decoded <newsletter@mytelos.app>"
 
 # GCP components we care about
 COMPONENTS = [
