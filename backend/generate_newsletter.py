@@ -73,7 +73,7 @@ def generate_issue():
     search_response = client.messages.create(
         model="claude-sonnet-5-5",
         max_tokens=2000,
-        messages=[{"role": "user", "content": f"Today is {today}. Search for the latest Google Cloud Platform announcements, release notes, and product updates from the past 7 days. Focus on: BigQuery, Spanner, Dataflow, Cloud Run, GKE, Vertex AI, Composer, Pub/Sub, AlloyDB, Cloud Storage, IAM, and security updates. List each update with the date, product name, and a brief description. Only include updates from the past 7 days."}],
+        messages=[{"role": "user", "content": f"Today is {today}. Search for the latest Google Cloud Platform announcements, release notes, and product updates from the past 7 days. Focus on: BigQuery, Spanner, Dataflow, Cloud Run, GKE, Vertex AI, Composer, Pub/Sub, AlloyDB, Cloud Storage, IAM, and security updates. For each update, include: the date, product name, a brief description, AND the source URL where the announcement was published. Only include updates from the past 7 days."}],
     )
     updates_text = extract_text(search_response)
 
@@ -108,7 +108,8 @@ Rules for the body HTML:
 - Include a "Why It Matters" section with impact for Data Architects and cert prep
 - Include a practical code example if applicable
 - End with a one-line takeaway wrapped in: <div class="takeaway"><p>takeaway here</p></div>
-- Keep body under 2000 chars
+- ALWAYS include a "Sources" section at the end with links to the original announcements, using: <h2>Sources</h2><ul><li><a href="URL">Title</a></li></ul>
+- Keep body under 2500 chars
 
 Return ONLY valid JSON, no markdown fences."""
 
