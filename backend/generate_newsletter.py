@@ -14,14 +14,16 @@ from datetime import datetime, timedelta
 
 import anthropic
 import psycopg2
+import resend
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://studyhub:studyhubdb123@localhost:5432/studyhub",
 )
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-API_URL = os.environ.get("API_URL", "https://studyhub-api-881000472963.southamerica-east1.run.app/api")
-RSS_URL = "https://cloud.google.com/feeds/release-notes.xml"
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+NEWSLETTER_URL = "https://romulovll.github.io/data-specialyst/newsletter.html"
+FROM_EMAIL = "Cloud Decoded <newsletter@pactnomad.app>"
 
 # GCP components we care about
 COMPONENTS = [
@@ -163,6 +165,65 @@ def save_issue(issue):
         conn.close()
 
 
+def get_subscribers():
+    """Get all subscriber emails."""
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT email FROM newsletter_subscribers")
+            return [row[0] for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def send_newsletter(issue, subscribers):
+    """Send newsletter issue to all subscribers via Resend."""
+    if not RESEND_API_KEY:
+        print("RESEND_API_KEY not set. Skipping email.")
+        return
+    if not subscribers:
+        print("No subscribers. Skipping email.")
+        return
+
+    resend.api_key = RESEND_API_KEY
+
+    html_body = f"""
+    <div style="max-width:600px;margin:0 auto;font-family:Inter,system-ui,sans-serif;color:#333;line-height:1.6">
+      <div style="background:linear-gradient(135deg,#10b981,#06b6d4);padding:24px;border-radius:12px 12px 0 0">
+        <h1 style="color:white;margin:0;font-size:22px">Cloud Decoded</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:13px">Google Cloud updates, decoded for practitioners</p>
+      </div>
+      <div style="background:#f9fafb;padding:24px;border:1px solid #e5e7eb;border-top:none">
+        <p style="color:#6b7280;font-size:12px;margin:0 0 8px">{issue['date']} &middot; {', '.join(issue.get('tags', []))}</p>
+        <h2 style="margin:0 0 12px;font-size:20px;color:#111">{issue['title']}</h2>
+        <p style="color:#4b5563;font-size:15px;margin:0 0 20px;font-style:italic">{issue['tldr']}</p>
+        <div style="font-size:14px;color:#374151">{issue.get('body', '')}</div>
+      </div>
+      <div style="background:#111827;padding:20px;border-radius:0 0 12px 12px;text-align:center">
+        <a href="{NEWSLETTER_URL}" style="color:#10b981;font-size:13px;text-decoration:none">Read all issues on the web</a>
+        <p style="color:#6b7280;font-size:11px;margin:12px 0 0">Cloud Decoded by Romulo Leao</p>
+      </div>
+    </div>
+    """
+
+    sent = 0
+    failed = 0
+    for email in subscribers:
+        try:
+            resend.Emails.send({
+                "from": FROM_EMAIL,
+                "to": [email],
+                "subject": f"Cloud Decoded: {issue['title']}",
+                "html": html_body,
+            })
+            sent += 1
+        except Exception as e:
+            print(f"Failed to send to {email}: {e}")
+            failed += 1
+
+    print(f"Emails sent: {sent}, failed: {failed}")
+
+
 def main():
     dry_run = "--dry-run" in sys.argv
 
@@ -179,6 +240,9 @@ def main():
         print(issue["body"][:500])
     else:
         save_issue(issue)
+        subscribers = get_subscribers()
+        print(f"Sending to {len(subscribers)} subscribers...")
+        send_newsletter(issue, subscribers)
         print("Done!")
 
 
